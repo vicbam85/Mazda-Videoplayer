@@ -90,7 +90,49 @@ VideoPlayerTmplt.prototype.handleControllerEvent = function(eventID)
 {
     log.debug("handleController() called, eventID: " + eventID);
 
-    var retValue = 'giveFocusLeft';
+  var retValue = null;
+  switch(eventID) {
+
+    case "ccw":
+    $('#myVideoRW').click();
+    retValue = "consumed";
+    break;
+
+    case "cw":
+    $('#myVideoFF').click();
+    retValue = "consumed";
+    break;
+
+    case "leftStart":
+    $('#myVideoStopBtn').click();
+    retValue = "consumed";
+    break;
+
+    case "downStart":
+    $('#myVideoScrollDown').click();
+    retValue = "consumed";
+    break;
+
+    case "upStart":
+    $('#myVideoScrollUp').click();
+    retValue = "consumed";
+    break;
+
+    case "rightStart":
+    $('#myVideoNextBtn').click();
+    retValue = "consumed";
+    break;
+
+    case "select":
+    $('#myVideoPausePlayBtn').click();
+    retValue = "consumed";
+    break
+
+    default:
+    //retValue = "consumed";
+    retValue = 'giveFocusLeft';
+  }
+
     return retValue;
 };
 /*
@@ -101,7 +143,7 @@ VideoPlayerTmplt.prototype.cleanUp = function()
 {
 	var child = document.getElementById(this.divElt.id);
 	child.parentNode.removeChild(child);
-	
+
 	this.divElt=null;
 	child=null;
 };
