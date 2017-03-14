@@ -92,42 +92,76 @@ VideoPlayerTmplt.prototype.handleControllerEvent = function(eventID)
 
   var retValue = null;
   switch(eventID) {
+		
+	case "downStart":
+	if (currentVideoTrack == null)
+	{
+		$('#myVideoScrollDown').click();
+		retValue = "consumed";
+	}
+	break;
 
-    case "ccw":
-    $('#myVideoRW').click();
-    retValue = "consumed";
-    break;
+	case "upStart":
+	if (currentVideoTrack == null)
+	{
+		$('#myVideoScrollUp').click();
+		retValue = "consumed";
+	}
+	else
+	{
+		fullScreenRequest();
+	}
+	break;
 
-    case "cw":
-    $('#myVideoFF').click();
-    retValue = "consumed";
-    break;
+	case "ccw":
+	if (currentVideoTrack != null)
+	{
+		$('#myVideoRW').click();
+		retValue = "consumed";
+	}
+	break;
 
-    case "leftStart":
-    $('#myVideoStopBtn').click();
-    retValue = "consumed";
-    break;
+	case "cw":
+	if (currentVideoTrack != null)
+	{
+		$('#myVideoFF').click();
+		retValue = "consumed";
+	}
+	break;
 
-    case "downStart":
-    $('#myVideoScrollDown').click();
-    retValue = "consumed";
-    break;
+	case "leftStart":
+	if (currentVideoTrack != null)
+	{
+		$('#myVideoStopBtn').click();
+		retValue = "consumed";
+	}
+	break;
+	
+	case "select":
+	if (currentVideoTrack != null)
+	{
+		$('#myVideoPausePlayBtn').click();
+		retValue = "consumed";
+	}
+	break
+	
+	case "rightStart":
+	if (currentVideoTrack != null)
+	{
+		$('#myVideoNextBtn').click();
+		retValue = "consumed";
+	}
+	break;
+	
 
-    case "upStart":
-    $('#myVideoScrollUp').click();
-    retValue = "consumed";
-    break;
-
-    case "rightStart":
-    $('#myVideoNextBtn').click();
-    retValue = "consumed";
-    break;
-
-    case "select":
-    $('#myVideoPausePlayBtn').click();
-    retValue = "consumed";
-    break
-
+	//case "left":
+	//case "right":
+	//case "selectStart":
+	//case "selectHold":
+	//case "leftHold":
+	//case "rightHold":
+	//case "upHold":
+    //case "downHold":
     default:
     //retValue = "consumed";
     retValue = 'giveFocusLeft';
