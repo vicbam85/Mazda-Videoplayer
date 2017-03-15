@@ -28,12 +28,15 @@
  *		Rotate command knob CCW/CW - RW/FF
  *		Lowered RW/FF time from 30s => 10s for beter control with command knob rotation
  *		Change method of managing the video list to jquery instead of bash
+ *		Avoid problems when using files with ', " or other special characters. You must remove this character from your video name
+ *		Use of the command knob to control the playback and to select the videos
  * TODO: 
  *		Get the time from gplay instead of the javascript in order to FF or RW more accurately
  *		Get Errors from gplay
  *		Change the audio input and stop the music player. If just mutes the player the system lags when playing
- *		Avoid problems when using files with ', " or other special characters. You must remove this character from your video name
- *		Use of the command knob if possible
+ *		Complete the plugins in the cmu in order to allow more file types and fullscreen toggle
+ 
+ 
  */
 var enableLog = false;
 
@@ -54,6 +57,7 @@ var CurrentVideoPlayTime = -5; //The gplay delays ~5s to start
 var TotalVideoTime = null;
 var intervalPlaytime;
 var waitingNext = false;
+var selectedItem = 0;
 
 var src = '';
 
@@ -356,28 +360,20 @@ function myVideoListResponse(data){
                     'video-data': item
                 })
                 .addClass('videoTrack')
-                .html(index + 1 + ". " + videoName.replace(/ /g, "&nbsp;"))
+                .html(index + 1 + ". " + videoName.replace(/  /g, " &nbsp;"))
 
             );
 
         });
 
-        //totalVideoListContainer++;
         totalVideos = videos.length;
-
-
-        try
-        {
-            //totalVideoListContainer = $('.videoListContainer').length;
-            if(totalVideoListContainer > 1){
-                $('#myVideoScrollDown').css({'visibility' : 'visible'});
-            }
-
-        }
-        catch(err)
-        {
-                writeLog("Error: " + err);
-        }
+		selectedItem=1;
+		handleCommander("ccw");
+        
+		if(totalVideoListContainer > 1)
+		{
+			$('#myVideoScrollDown').css({'visibility' : 'visible'});
+		}
     }
 }
 
@@ -388,6 +384,7 @@ function myVideoListScrollUpDown(action){
 	
     if(action === 'up'){
         currentVideoListContainer--;
+		
     } else if (action === 'down'){
         currentVideoListContainer++;
     }
@@ -398,7 +395,7 @@ function myVideoListScrollUpDown(action){
         $('#myVideoScrollUp').css({'visibility' : 'visible'});
     }
 	
-    if((currentVideoListContainer + 1) === totalVideoListContainer){	
+    if((currentVideoListContainer + 1) === totalVideoListContainer){
         $('#myVideoScrollDown').css({'visibility' : 'hidden'});
     } else if((currentVideoListContainer + 1) < totalVideoListContainer){
         $('#myVideoScrollDown').css({'visibility' : 'visible'});
@@ -790,6 +787,132 @@ function startPlayTimeInterval()
 		}
 		
 	}, 1000);
+}
+
+
+//function to handle the commander
+function handleCommander(eventID)
+{
+	switch(eventID) {
+		
+		case "down":
+			if (currentVideoTrack === null)
+			{
+				if((currentVideoListContainer + 1) < totalVideoListContainer)
+				{
+					$('#myVideoScrollDown').click();
+					
+					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+					selectedItem += 8;
+					
+					if (selectedItem >= totalVideos)
+					{
+						selectedItem = totalVideos - 1;
+					}
+					
+					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+				}
+				else if ((currentVideoListContainer + 1) === totalVideoListContainer)
+				{
+					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+					selectedItem = totalVideos - 1;
+					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+				}
+			}
+			break;
+
+		case "up":
+			if (currentVideoTrack === null)
+			{
+				if (currentVideoListContainer > 0)
+				{
+					$('#myVideoScrollUp').click();
+					
+					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+					selectedItem -= 8;
+					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+				}
+				else if (currentVideoListContainer === 0)
+				{
+					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+					selectedItem = 0;
+					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+				}
+			}
+			else
+			{
+				fullScreenRequest();
+			}
+			break;
+
+		case "ccw":
+			if (currentVideoTrack !== null)
+			{
+				$('#myVideoRW').click();
+			}
+			else
+			{
+				if (selectedItem > 0)
+				{
+					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+					
+					if ((selectedItem % 8) === 0)
+					{
+						$('#myVideoScrollUp').click();
+					}
+
+					selectedItem--;
+					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+				}
+			}
+			break;
+
+		case "cw":
+			if (currentVideoTrack !== null)
+			{
+				$('#myVideoFF').click();
+			}
+			else
+			{
+				if (selectedItem + 1 < totalVideos)
+				{
+					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+					selectedItem++;
+					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+						
+					if ((selectedItem > 0) && ((selectedItem % 8) === 0))
+					{
+						$('#myVideoScrollDown').click();
+					}
+				}
+			}
+			break;
+
+		case "left":
+			if (currentVideoTrack !== null)
+			{
+				$('#myVideoStopBtn').click();
+			}
+			break;
+		
+		case "select":
+			if (currentVideoTrack !== null)
+			{
+				$('#myVideoPausePlayBtn').click();
+			}
+			else
+			{
+				myVideoStartRequest($(".videoTrack").eq(selectedItem));
+			}
+			break;
+		
+		case "right":
+			if (currentVideoTrack !== null)
+			{
+				$('#myVideoNextBtn').click();
+			}
+			break;
+	}
 }
 
 /* websocket
