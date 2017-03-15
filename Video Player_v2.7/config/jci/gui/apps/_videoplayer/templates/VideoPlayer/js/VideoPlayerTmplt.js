@@ -90,70 +90,19 @@ VideoPlayerTmplt.prototype.handleControllerEvent = function(eventID)
 {
     log.debug("handleController() called, eventID: " + eventID);
 
-  var retValue = null;
-  switch(eventID) {
-		
-	case "downStart":
-	if (currentVideoTrack == null)
-	{
-		$('#myVideoScrollDown').click();
-		retValue = "consumed";
-	}
-	break;
+	var retValue = null;
 
-	case "upStart":
-	if (currentVideoTrack == null)
-	{
-		$('#myVideoScrollUp').click();
-		retValue = "consumed";
-	}
-	else
-	{
-		fullScreenRequest();
-	}
-	break;
+	handleCommander(eventID);
 
-	case "ccw":
-	if (currentVideoTrack != null)
-	{
-		$('#myVideoRW').click();
-		retValue = "consumed";
-	}
-	break;
-
-	case "cw":
-	if (currentVideoTrack != null)
-	{
-		$('#myVideoFF').click();
-		retValue = "consumed";
-	}
-	break;
-
-	case "leftStart":
-	if (currentVideoTrack != null)
-	{
-		$('#myVideoStopBtn').click();
-		retValue = "consumed";
-	}
-	break;
-	
-	case "select":
-	if (currentVideoTrack != null)
-	{
-		$('#myVideoPausePlayBtn').click();
-		retValue = "consumed";
-	}
-	break
-	
-	case "rightStart":
-	if (currentVideoTrack != null)
-	{
-		$('#myVideoNextBtn').click();
-		retValue = "consumed";
-	}
-	break;
-	
-
+	//case "down":
+	//case "up":
+	//case "downStart":
+	//case "upStart":
+	//case "ccw":
+	//case "cw":
+	//case "leftStart":
+	//case "select":
+	//case "rightStart":
 	//case "left":
 	//case "right":
 	//case "selectStart":
@@ -161,13 +110,12 @@ VideoPlayerTmplt.prototype.handleControllerEvent = function(eventID)
 	//case "leftHold":
 	//case "rightHold":
 	//case "upHold":
-    //case "downHold":
-    default:
-    //retValue = "consumed";
-    retValue = 'giveFocusLeft';
-  }
+	//case "downHold":
 
-    return retValue;
+	retValue = "consumed";
+	//retValue = 'giveFocusLeft';
+
+	return retValue;
 };
 /*
  * Called by the app during templateNoLongerDisplayed. Used to perform garbage collection procedures on the template and
