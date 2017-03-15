@@ -27,12 +27,13 @@
     font-family: verdana;
     font-weight: normal;
     height:23px;
-    width:430px;
+    width:410px;
     position:absolute;
     left:12px;
     bottom:23px;  
     display:none;
     overflow: hidden;
+	white-space: nowrap;
     text-overflow: ellipsis;
 }
 #myVideoStatus {
@@ -160,4 +161,8 @@
     background-position: center;
     background-repeat: no-repeat;
 	z-index: 20200;
+}
+.selectedItem {
+	background: -o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1));  /*Opera 11.1-12*/
+    background: linear-gradient(to top, rgba(255,0,0,0), rgba(255,0,0,1));
 }
