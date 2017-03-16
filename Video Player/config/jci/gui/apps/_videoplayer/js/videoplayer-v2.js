@@ -792,6 +792,8 @@ function handleCommander(eventID)
 {
 	switch(eventID) {
 		
+		writeLog('handleCommander - ' + eventID);
+		
 		case "down":
 			if (currentVideoTrack === null)
 			{
