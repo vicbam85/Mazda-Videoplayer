@@ -1,3 +1,4 @@
+<<<<<<< HEAD:Video Player/config/jci/gui/apps/_videoplayer/templates/VideoPlayer/css/VideoPlayerTmplt.css
 #myVideoContainer {
     height:480px;
     width:100%;
@@ -161,3 +162,173 @@
     background-repeat: no-repeat;
 	z-index: 20200;
 }
+=======
+#myVideoContainer {
+    height:480px;
+    width:100%;
+    position:relative;
+    background-image: url('../images/player_background.jpg');
+}
+#myVideoContainer #ajaxLoader {
+    width: 150px;
+    height: 150px;
+    left: 275px;
+    top: 130px;
+    position: absolute;
+}
+#myVideoControlDiv {
+    top:430px;
+    right:0;
+    left:0;
+    height:50px;
+    width:100%;
+    position:absolute;
+    border-top:1px solid #444444;
+    /*background-color: #000000;*/
+}
+#myVideoName {
+    color: #cccccc;
+    font-size: 16px;
+    font-family: verdana;
+    font-weight: normal;
+    height:23px;
+    width:410px;
+    position:absolute;
+    left:12px;
+    bottom:23px;  
+    display:none;
+    overflow: hidden;
+	white-space: nowrap;
+    text-overflow: ellipsis;
+}
+#myVideoStatus {
+    color: #cccccc;
+    font-size: 14px;
+    font-family: verdana;
+    font-weight: normal;
+    height:23px;
+    width:430px;
+    position:absolute;
+    left:12px;
+    bottom:2px;
+    display:none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#myVideoControlDiv ul {
+    margin:0;
+    padding:0;
+    list-style-type: none;
+    height: 100%;
+    width: 100%;
+}
+#myVideoControlDiv ul li {
+    float: right;
+    padding-left: 42px;
+    margin-right: 23px;
+    background-repeat: no-repeat !important;
+    background-position: 0 7px;
+    height: 100%;
+}
+#myVideoControlDiv ul li a {
+    display: block;
+    color: #cccccc;
+    font-size: 18px;
+    font-family: verdana;
+    font-weight: normal;
+    padding-top: 16px;
+}
+#myVideoControlDiv ul li:active {
+    background: -o-linear-gradient(bottom,rgba(0,0,0,0),rgba(0,0,0,1));  /*Opera 11.1-12*/
+    background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,1));  /*Standard*/
+    background-repeat: no-repeat !important;
+    background-position: 0 3px;
+}
+
+.rebootBtnDiv {
+    margin-top: 1px;
+    margin-left: 10px;
+}
+
+#myVideoList {
+    top:66px;
+    right:100px;
+    bottom:61px;
+    left:20px;
+    position:absolute;
+    font-size: 24px;
+    color: #cccccc;
+    font-family: verdana;
+    overflow: hidden;
+}
+#myVideoList ul {
+    height:100%;
+    width:100%;
+    margin:0;
+    padding:0;
+    list-style-type: none;
+    /*overflow-y: scroll;*/
+}
+#myVideoList ul li {
+    border-bottom: 1px solid #666666;
+    padding: 10px 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#myVideoList ul li:focus,  #myVideoList ul li:active {
+    background: -o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1));  /*Opera 11.1-12*/
+    background: linear-gradient(to top, rgba(255,0,0,0), rgba(255,0,0,1));  /*Standard*/
+}
+#myVideoScroll {
+    top:120px;
+    right:40px;
+    position:absolute;
+}
+#myVideoScroll img {
+    display:block;
+    visibility:hidden;
+    margin-top:30px;
+}
+#videoPlayControl {
+    top:64px;
+    right:0px;
+    bottom:50px;
+    left:0px;    
+    position:absolute;
+    display: none;
+}
+#videoPlayControl ul{
+    margin:0;
+    padding:0;
+}
+#videoPlayControl ul{
+    margin:0;
+    padding:0;
+    list-style-type: none;
+}
+#videoPlayControl ul li{
+    float:left;
+}
+#videoPlayFFBtn {
+    width: 15%;
+    height: 367px;
+}
+#videoPlayRWBtn {
+    width: 15%;
+    height: 367px;
+}
+#videoPlayBtn {
+    left:60px;
+    right:60px;
+    height: 367px;
+    width: 70%;
+    background-position: center;
+    background-repeat: no-repeat;
+	z-index: 20200;
+}
+.selectedItem {
+	background: -o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1));  /*Opera 11.1-12*/
+    background: linear-gradient(to top, rgba(255,0,0,0), rgba(255,0,0,1));
+}
+>>>>>>> refs/remotes/origin/New-way-to-obtain-video:Video Player_v2.7/config/jci/gui/apps/_videoplayer/templates/VideoPlayer/css/VideoPlayerTmplt.css
