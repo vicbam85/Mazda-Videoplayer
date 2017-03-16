@@ -536,15 +536,13 @@ function myVideoNextRequest(){
 			if (Shuffle)
 			{
 				var prevVideoTrack = currentVideoTrack;
-				currentVideoTrack = Math.floor(Math.random() * totalVideos) -1;
+				nextVideoTrack = Math.floor(Math.random() * totalVideos);
 
-				while (prevVideoTrack === currentVideoTrack)
+				while (prevVideoTrack === nextVideoTrack)
 				{
-					currentVideoTrack = Math.floor(Math.random() * totalVideos) -1;
+					nextVideoTrack = Math.floor(Math.random() * totalVideos);
 				}
 			}
-
-			nextVideoTrack = currentVideoTrack + 1;
 		}
 
 		writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
@@ -565,7 +563,6 @@ function myVideoNextRequest(){
 		
 		waitingWS = false;
 	}
-	
 }
 
 /* stop playback request / response
