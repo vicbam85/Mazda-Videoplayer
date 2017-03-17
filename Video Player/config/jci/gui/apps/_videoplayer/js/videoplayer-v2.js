@@ -543,6 +543,10 @@ function myVideoNextRequest(){
 					nextVideoTrack = Math.floor(Math.random() * totalVideos);
 				}
 			}
+			else
+			{
+				nextVideoTrack = currentVideoTrack + 1;
+			}
 		}
 
 		writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
