@@ -780,7 +780,7 @@ function startPlayTimeInterval()
 				$('#myVideoStatus').html(state);
 			}
 			
-			if ((!waitingNext) && (TotalVideoTime > 0) && (CurrentVideoPlayTime >= TotalVideoTime))
+			if ((!waitingNext) && (TotalVideoTime > 0) && (CurrentVideoPlayTime >= TotalVideoTime + 1))
 			{
 				waitingNext = true;
 				myVideoNextRequest();
