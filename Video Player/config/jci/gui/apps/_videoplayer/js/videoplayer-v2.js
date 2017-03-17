@@ -647,7 +647,7 @@ function myVideoFFRequest(){
     {
         waitingWS = true;
 		
-		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 35 < TotalVideoTime)
+		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 12 < TotalVideoTime)
 		{
 			CurrentVideoPlayTime = CurrentVideoPlayTime + 10;
 			wsVideo.send('e');
