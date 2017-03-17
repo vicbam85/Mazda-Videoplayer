@@ -790,9 +790,9 @@ function startPlayTimeInterval()
 //function to handle the commander
 function handleCommander(eventID)
 {
+	writeLog('handleCommander - ' + eventID);
+	
 	switch(eventID) {
-		
-		writeLog('handleCommander - ' + eventID);
 		
 		case "down":
 			if (currentVideoTrack === null)
