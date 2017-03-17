@@ -643,7 +643,7 @@ function myVideoFFRequest(){
     {
         waitingWS = true;
 		
-		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 35 < TotalVideoTime)
+		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 12 < TotalVideoTime)
 		{
 			CurrentVideoPlayTime = CurrentVideoPlayTime + 10;
 			wsVideo.send('e');
@@ -776,7 +776,7 @@ function startPlayTimeInterval()
 				$('#myVideoStatus').html(state);
 			}
 			
-			if ((!waitingNext) && (TotalVideoTime > 0) && (CurrentVideoPlayTime >= TotalVideoTime))
+			if ((!waitingNext) && (TotalVideoTime > 0) && (CurrentVideoPlayTime >= TotalVideoTime + 1))
 			{
 				waitingNext = true;
 				myVideoNextRequest();
