@@ -49,6 +49,9 @@ var currentVideoListContainer = 0;
 var totalVideoListContainer = 0;
 var FullScreen = false;
 var Shuffle = true;
+//When we are ready to use localStorage we can replace these 3 variable declarations
+//var FullScreen =  JSON.parse(localStorage.getItem('videoplayer.fullscreen')) || false;
+//var Shuffle = JSON.parse(localStorage.getItem('videoplayer.shuffle')) || false;
 var waitingWS = false;
 var waitingForClose=false;
 var totalVideos = 0;
@@ -164,6 +167,8 @@ $(document).ready(function(){
 			FullScreen = true;
 			$('#myVideoFullScrBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
 		}
+    //When we are ready for localstorage
+		//localStorage.setItem('videoplayer.fullscreen',  JSON.stringify(FullScreen));
 	});
 
 	/* stop playback
@@ -236,6 +241,8 @@ $(document).ready(function(){
 			Shuffle = true;
 			$('#myVideoShuffleBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
 		}
+    //When we are ready to use localStorage
+		//localStorage.setItem('videoplayer.shuffle', JSON.stringify(Shuffle));
 	});
 
      setTimeout(function () {
