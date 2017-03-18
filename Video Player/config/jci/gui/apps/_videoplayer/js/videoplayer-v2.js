@@ -74,7 +74,12 @@ $(document).ready(function(){
 	{
 
 	}
-
+	if(FullScreen){
+		$('#myVideoFullScrBtn').css({'background-image' : 'url(apps/custom/apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
+	}
+	if(Shuffle){
+		$('#myVideoShuffleBtn').css({'background-image' : 'url(apps/custom/apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
+	}
 //	if (window.File && window.FileReader && window.FileList && window.Blob) {
 //		$('#myVideoList').html("step 1");
 //	}
