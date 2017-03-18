@@ -30,6 +30,7 @@
  *		Change method of managing the video list to jquery instead of bash
  *		Avoid problems when using files with ', " or other special characters. You must remove this character from your video name
  *		Use of the command knob to control the playback and to select the videos
+ *		Use of the websocketd file provided by diginix
  * TODO:
  *		Get the time from gplay instead of the javascript in order to FF or RW more accurately
  *		Get Errors from gplay
@@ -82,7 +83,7 @@ $(document).ready(function(){
 //	}
 	if (enableLog)
 	{
-		//myVideoWs('mount -o rw,remount /; hwclock --hctosys; ', false); //enable-write - Change Date
+		myVideoWs('mount -o rw,remount /; hwclock --hctosys; ', false); //enable-write - Change Date
 
 		writeLog("\n---------------------------------------------------------------------------------\napp start\nStart App Config");
 	}
@@ -541,7 +542,6 @@ function myVideoNextRequest(){
 		{
 			if (Shuffle)
 			{
-				// This will always be true the first time it is reached
 				while (currentVideoTrack === nextVideoTrack)
 				{
 					nextVideoTrack = Math.floor(Math.random() * totalVideos);
@@ -649,17 +649,17 @@ function myVideoFFRequest(){
 
     if (!waitingWS)
     {
-       waitingWS = true;
+        waitingWS = true;
 
-  		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 12 < TotalVideoTime)
-	  	{
-		  	CurrentVideoPlayTime = CurrentVideoPlayTime + 10;
-			  wsVideo.send('e');
-	  		wsVideo.send('1');
-		  	wsVideo.send('t' + CurrentVideoPlayTime);
-		  }
+		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 12 < TotalVideoTime)
+		{
+			CurrentVideoPlayTime = CurrentVideoPlayTime + 10;
+			wsVideo.send('e');
+			wsVideo.send('1');
+			wsVideo.send('t' + CurrentVideoPlayTime);
+		}
 
-		  waitingWS = false;
+		waitingWS = false;
     }
 }
 
