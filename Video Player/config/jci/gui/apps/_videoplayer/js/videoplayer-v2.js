@@ -651,17 +651,17 @@ function myVideoFFRequest(){
 
     if (!waitingWS)
     {
-        waitingWS = true;
+       waitingWS = true;
 
-		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 12 < TotalVideoTime)
-		{
-			CurrentVideoPlayTime = CurrentVideoPlayTime + 10;
-			wsVideo.send('e');
-			wsVideo.send('1');
-			wsVideo.send('t' + CurrentVideoPlayTime);
-		}
+  		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 12 < TotalVideoTime)
+	  	{
+		  	CurrentVideoPlayTime = CurrentVideoPlayTime + 10;
+			  wsVideo.send('e');
+	  		wsVideo.send('1');
+		  	wsVideo.send('t' + CurrentVideoPlayTime);
+		  }
 
-		waitingWS = false;
+		  waitingWS = false;
     }
 }
 
