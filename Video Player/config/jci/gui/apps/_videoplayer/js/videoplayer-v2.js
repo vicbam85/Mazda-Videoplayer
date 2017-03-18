@@ -541,10 +541,8 @@ function myVideoNextRequest(){
 		{
 			if (Shuffle)
 			{
-				var prevVideoTrack = currentVideoTrack;
-				nextVideoTrack = Math.floor(Math.random() * totalVideos);
-
-				while (prevVideoTrack === nextVideoTrack)
+				// This will always be true the first time it is reached
+				while (currentVideoTrack === nextVideoTrack)
 				{
 					nextVideoTrack = Math.floor(Math.random() * totalVideos);
 				}
