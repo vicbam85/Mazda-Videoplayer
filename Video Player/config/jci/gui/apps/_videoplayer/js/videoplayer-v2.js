@@ -544,6 +544,7 @@ function myVideoNextRequest(){
 			{
 				nextVideoTrack++;
 			}
+		}
 
 		writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
 
