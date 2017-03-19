@@ -563,7 +563,7 @@ function myVideoNextRequest(){
 		}
 		if(!playbackRepeat)
 		{
-			if (recentlyPlayed.indexOf(currentVideoTrack) !== -1)
+			if (recentlyPlayed.indexOf(currentVideoTrack) === -1)
 			{
 				recentlyPlayed.push(currentVideoTrack);
 			}
