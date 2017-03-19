@@ -45,14 +45,12 @@ var enableLog = false;
 //var folderPath='/home/victor/Videos1';
 var folderPath='/tmp/mnt';
 var currentVideoTrack = null;
-//var Repeat = false;
 var Repeat = JSON.parse(localStorage.getItem('videoplayer.repeat')) || false;
+var FullScreen =  JSON.parse(localStorage.getItem('videoplayer.fullscreen')) || false;
+var Shuffle = JSON.parse(localStorage.getItem('videoplayer.shuffle')) || false;
+var RepeatAll = JSON.parse(localStorage.getItem('videoplayer.repeatall')) || false;
 var currentVideoListContainer = 0;
 var totalVideoListContainer = 0;
-//var FullScreen = false;
-var FullScreen = JSON.parse(localStorage.getItem('videoplayer.fullscreen')) || false;
-//var Shuffle = true;
-var Shuffle = JSON.parse(localStorage.getItem('videoplayer.shuffle')) || false;
 var waitingWS = false;
 var waitingForClose=false;
 var totalVideos = 0;
@@ -64,6 +62,10 @@ var intervalPlaytime;
 var waitingNext = false;
 var selectedItem = 0;
 var previousVideoTrack = null;
+var recentlyPlayed = [];
+
+var boxChecked = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)';
+var boxUncheck = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)';
 
 var src = '';
 
@@ -73,28 +75,16 @@ $(document).ready(function(){
 	try
 	{
 		$('#SbSpeedo').fadeOut();
-		//framework.sendEventToMmui("common", "SelectBTAudio");
+		framework.sendEventToMmui("common", "Global.Pause");
 	}
 	catch(err)
 	{
 
 	}
-	
-	if(FullScreen)
-	{
- 		$('#myVideoFullScrBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
-	}
-	
- 	if(Shuffle)
-	{
- 		$('#myVideoShuffleBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
-	}
-	
-	if(Repeat)
-	{
- 		$('#myVideoRepeatBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
-	}
-
+	(FullScreen) ? $('#myVideoFullScrBtn').css({'background-image' : boxChecked}) : $('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
+	(Shuffle) ? $('#myVideoShuffleBtn').css({'background-image' : boxChecked}) : $('#myVideoShuffleBtn').css({'background-image' : boxUncheck});
+	(Repeat) ? $('#myVideoRepeatBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatBtn').css({'background-image' : boxUncheck});
+	(RepeatAll) ? $('#myVideoRepeatAllBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatAllBtn').css({'background-image' : boxUncheck});
 //	if (window.File && window.FileReader && window.FileList && window.Blob) {
 //		$('#myVideoList').html("step 1");
 //	}
@@ -172,15 +162,13 @@ $(document).ready(function(){
 		writeLog("myVideoFullScrBtn Clicked");
 		if(FullScreen){
 			FullScreen = false;
-			$('#myVideoFullScrBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)'});
+			$('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
 		}
 		else {
 			FullScreen = true;
-			$('#myVideoFullScrBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
+			$('#myVideoFullScrBtn').css({'background-image' : boxChecked});
 		}
-		
-		//When we are ready for localstorage
-		localStorage.setItem('videoplayer.fullscreen', JSON.stringify(FullScreen));
+		localStorage.setItem('videoplayer.fullscreen',  JSON.stringify(FullScreen));
 	});
 
 	/* stop playback
@@ -239,14 +227,28 @@ $(document).ready(function(){
 		writeLog("myVideoRepeatBtn Clicked");
 		if(Repeat){
 			Repeat = false;
-			$('#myVideoRepeatBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)'});
+			$('#myVideoRepeatBtn').css({'background-image' : boxUncheck});
 		} else {
 			Repeat = true;
-			$('#myVideoRepeatBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
+			$('#myVideoRepeatBtn').css({'background-image' : boxChecked});
 		}
-		
-		//When we are ready to use localStorage
- 		localStorage.setItem('videoplayer.repeat', JSON.stringify(Repeat));
+		recentlyPlayed = [];
+		localStorage.setItem('videoplayer.repeat', JSON.stringify(Repeat));
+	});
+
+	/* repeat all option (loop entire video list)
+	==================================================================================*/
+	$('#myVideoRepeatAllBtn').click(function(){
+		writeLog("myVideoRepeatAllBtn Clicked");
+		if(RepeatAll){
+			RepeatAll = false;
+			$('#myVideoRepeatAllBtn').css({'background-image' : boxUncheck});
+		} else {
+			RepeatAll = true;
+			$('#myVideoRepeatAllBtn').css({'background-image' : boxChecked});
+		}
+		recentlyPlayed = [];
+		localStorage.setItem('videoplayer.repeatall', JSON.stringify(RepeatAll));
 	});
 
 	/* Shuffle option
@@ -256,16 +258,15 @@ $(document).ready(function(){
 		if(Shuffle)
 		{
 			Shuffle = false;
-			$('#myVideoShuffleBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)'});
+			$('#myVideoShuffleBtn').css({'background-image' : boxUncheck});
+			recentlyPlayed = [];
 		}
 		else
 		{
 			Shuffle = true;
-			$('#myVideoShuffleBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
+			$('#myVideoShuffleBtn').css({'background-image' : boxChecked});
 		}
-		
-		//When we are ready to use localStorage
- 		localStorage.setItem('videoplayer.shuffle', JSON.stringify(Shuffle));
+		localStorage.setItem('videoplayer.shuffle', JSON.stringify(Shuffle));
 	});
 
 	setTimeout(function () {
@@ -472,11 +473,12 @@ function myVideoStartRequest(obj){
 	$('#myVideoScrollUp').css({'visibility' : 'hidden'});
 
 
-	$('#myVideoShuffleBtn').css({'display' : 'none'});
-	$('#myVideoMovieBtn').css({'display' : 'none'});
-	$('#myVideoFullScrBtn').css({'display' : 'none'});
-	$('#myVideoRepeatBtn').css({'display' : 'none'});
-	$('.rebootBtnDiv').css({'display' : 'none'});
+    $('#myVideoShuffleBtn').css({'display' : 'none'});
+    $('#myVideoMovieBtn').css({'display' : 'none'});
+    $('#myVideoFullScrBtn').css({'display' : 'none'});
+    $('#myVideoRepeatBtn').css({'display' : 'none'});
+    $('#myVideoRepeatAllBtn').css({'display' : 'none'});
+    $('.rebootBtnDiv').css({'display' : 'none'});
 
 	$('#myVideoPreviousBtn').css({'display' : ''});
 	$('#myVideoRW').css({'display' : ''});
@@ -567,11 +569,34 @@ function myVideoNextRequest(){
 
 		nextVideoTrack = currentVideoTrack;
 
+		if (currentVideoTrack) 
+		{
+			nextVideoTrack = currentVideoTrack;
+		}
 		if(!Repeat)
 		{
+			if (recentlyPlayed.indexOf(currentVideoTrack) === -1)
+			{
+				recentlyPlayed.push(currentVideoTrack);
+			}
+		 
+			if (recentlyPlayed.length >= totalVideos) 
+			{
+				if (!RepeatAll) 
+				{
+					myVideoStopRequest();
+					waitingWS = false;
+					recentlyPlayed = [];
+					return;
+				}
+				else
+				{
+					recentlyPlayed = [];
+				}
+			}
 			if (Shuffle)
 			{
-				while (currentVideoTrack === nextVideoTrack)
+				while (recentlyPlayed.indexOf(nextVideoTrack) !== -1 || nextVideoTrack === currentVideoTrack)
 				{
 					nextVideoTrack = Math.floor(Math.random() * totalVideos);
 				}
@@ -579,6 +604,10 @@ function myVideoNextRequest(){
 			else
 			{
 				nextVideoTrack++;
+				if (nextVideoTrack >= totalVideos) 
+				{
+					nextVideoTrack=0;
+				}
 			}
 		}
 
@@ -615,7 +644,7 @@ function myVideoPreviousRequest(){
 
 	if (previousVideoTrack === null)
 	{
-		previousVideoTrack = currentVideoTrack;
+		previousVideoTrack = recentlyPlayed.pop();
 	}
 	
 	if (!waitingWS)
@@ -664,10 +693,11 @@ function myVideoStopRequest(){
 	$('#videoPlayBtn').css({'background-image' : ''});
 
 	$('#myVideoShuffleBtn').css({'display' : ''});
-	$('#myVideoMovieBtn').css({'display' : ''});
-	$('#myVideoFullScrBtn').css({'display' : ''});
-	$('#myVideoRepeatBtn').css({'display' : ''});
-	$('.rebootBtnDiv').css({'display' : ''});
+    $('#myVideoMovieBtn').css({'display' : ''});
+    $('#myVideoFullScrBtn').css({'display' : ''});
+    $('#myVideoRepeatBtn').css({'display' : ''});
+    $('#myVideoRepeatAllBtn').css({'display' : ''});
+    $('.rebootBtnDiv').css({'display' : ''});
 
 	$('#myVideoList').css({'visibility' : 'visible'});
 	myVideoListScrollUpDown('other');
@@ -760,13 +790,14 @@ function fullScreenRequest()
 
 		if(FullScreen){
 			FullScreen = false;
-			$('#myVideoFullScrBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)'});
+			$('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
 		}
 		else {
 			FullScreen = true;
-			$('#myVideoFullScrBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)'});
+			$('#myVideoFullScrBtn').css({'background-image' : boxChecked});
 		}
-
+		
+		localStorage.setItem('videoplayer.fullscreen',  JSON.stringify(FullScreen));
 		wsVideo.send('f');
 
 		waitingWS = false;
@@ -986,7 +1017,17 @@ function handleCommander(eventID)
 			{
 				$('#myVideoNextBtn').click();
 			}
+			else
+			{
+				$('#myVideoShuffleBtn').click();
+			}
 			break;
+
+		default:
+			return "ignored";
+			break;
+		
+		return "consumed";
 	}
 }
 
