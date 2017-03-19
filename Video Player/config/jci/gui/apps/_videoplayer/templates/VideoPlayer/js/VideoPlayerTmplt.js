@@ -92,9 +92,7 @@ VideoPlayerTmplt.prototype.handleControllerEvent = function(eventID)
 {
     log.debug("handleController() called, eventID: " + eventID);
 
-	var retValue = null;
-
-	handleCommander(eventID);
+	var retValue = handleCommander(eventID);
 
 	//case "down":
 	//case "up":
@@ -114,7 +112,7 @@ VideoPlayerTmplt.prototype.handleControllerEvent = function(eventID)
 	//case "upHold":
 	//case "downHold":
 
-	retValue = "consumed";
+	//retValue = "consumed";
 	//retValue = 'giveFocusLeft';
 
 	return retValue;

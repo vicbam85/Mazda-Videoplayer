@@ -168,7 +168,7 @@ $(document).ready(function(){
 			FullScreen = true;
 			$('#myVideoFullScrBtn').css({'background-image' : boxChecked});
 		}
-		localStorage.setItem('videoplayer.fullscreen',  JSON.stringify(FullScreen));
+		localStorage.setItem('videoplayer.fullscreen', JSON.stringify(FullScreen));
 	});
 
 	/* stop playback
@@ -234,7 +234,7 @@ $(document).ready(function(){
 		}
 		recentlyPlayed = [];
 		localStorage.setItem('videoplayer.repeat', JSON.stringify(Repeat));
-	});
+	}); 
 
 	/* repeat all option (loop entire video list)
 	==================================================================================*/
@@ -567,8 +567,6 @@ function myVideoNextRequest(){
 
 		previousVideoTrack = currentVideoTrack;
 
-		nextVideoTrack = currentVideoTrack;
-
 		if (currentVideoTrack) 
 		{
 			nextVideoTrack = currentVideoTrack;
@@ -641,10 +639,12 @@ function myVideoPreviousRequest(){
 	$('#myVideoStatus').html('');
 
 	clearInterval(intervalPlaytime);
+	
+	previousVideoTrack = recentlyPlayed.pop();
 
 	if (previousVideoTrack === null)
 	{
-		previousVideoTrack = recentlyPlayed.pop();
+		previousVideoTrack = currentVideoTrack;
 	}
 	
 	if (!waitingWS)
@@ -1026,9 +1026,9 @@ function handleCommander(eventID)
 		default:
 			return "ignored";
 			break;
-		
-		return "consumed";
+			
 	}
+	return "consumed";
 }
 
 
