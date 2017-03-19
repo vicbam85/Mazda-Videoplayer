@@ -59,8 +59,8 @@
 }
 #myVideoControlDiv ul li {
     float: right;
-    padding-left: 42px;
-    margin-right: 23px;
+    padding-left: 40px;
+    margin-right: 13px;
     background-repeat: no-repeat !important;
     background-position: 0 7px;
     height: 100%;
@@ -68,7 +68,7 @@
 #myVideoControlDiv ul li a {
     display: block;
     color: #cccccc;
-    font-size: 18px;
+    font-size: 16px;
     font-family: verdana;
     font-weight: normal;
     padding-top: 16px;
