@@ -50,6 +50,7 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties)
 	'<li id="myVideoFF" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/FF.png)"></li>'+
 	'<li id="myVideoPausePlayBtn" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPauseBtn.png)"></li>'+
 	'<li id="myVideoRW" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/RW.png)"></li>'+
+	'<li id="myVideoPreviousBtn" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPreviousBtn.png)"></li>'+
 	'<li id="myVideoMovieBtn" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoMovieBtn.png)"><a>Search Videos</a></li>'+
 	'<li id="myVideoFullScrBtn"><a>Full Screen</a></li>' +
 	'<li id="myVideoRepeatBtn"><a>Repeat 1</a></li>'+

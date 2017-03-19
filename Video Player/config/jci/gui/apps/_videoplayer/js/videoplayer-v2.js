@@ -5,8 +5,8 @@
  * v2.2 Enabled the fullscreen Option
  * v2.3 Included the status bar and adjusts to play in a window
  * v2.4 Included a shuffle option
- *      fixed the problem of pressing the next button rapidly
- *      The list updates automaticaly at start
+ *		fixed the problem of pressing the next button rapidly
+ *		The list updates automaticaly at start
  * v2.5 It can now logs the steps (have to enable it on the videoplayer-v2.js & videoplayer.sh files)
  *		closes the app if is not the current (first attempt)
  *		fixes the issue of pressing mutiple times the search video button
@@ -31,6 +31,7 @@
  *		Avoid problems when using files with ', " or other special characters. You must remove this character from your video name
  *		Use of the command knob to control the playback and to select the videos
  *		Use of the websocketd file provided by diginix
+ *		Previous video option (only the previous)
  * TODO:
  *		Get the time from gplay instead of the javascript in order to FF or RW more accurately
  *		Get Errors from gplay
@@ -90,28 +91,22 @@ $(document).ready(function(){
 	{
 		myVideoWs('mount -o rw,remount /; hwclock --hctosys; ', false); //enable-write - Change Date
 
-		writeLog("\n---------------------------------------------------------------------------------\napp start\nStart App Config");
+		writeLog("\n---------------------------------------------------------------------------------\napp start\nStart App Config\n====creating swap====");
 	}
 
 	src = 'USBDRV=$(ls /mnt | grep sd); ' +
 
 		'for USB in $USBDRV; ' +
 		'do ' +
-
 		'USBPATH=/tmp/mnt/${USB}; ' +
 		'SWAPFILE="${USBPATH}"/swapfile; ' +
 		'if [ -e "${SWAPFILE}" ]; ' +
-			'then ';
-
-	if (enableLog)
-	{
-		src = src + 'echo "====creating swap====" >> /jci/gui/apps/_videoplayer/log/videoplayer_log.txt; ';
-	}
-
-	src = src + 'mount -o rw,remount ${USBPATH}; ' +
+		'then ' +
+		'mount -o rw,remount ${USBPATH}; ' +
+		'mkswap ${SWAPFILE};' +
 		'swapon ${SWAPFILE}; ' +
 		'break; ' +
-			'fi; ' +
+		'fi; ' +
 		'done; ';
 
 	if (enableLog)
@@ -160,7 +155,7 @@ $(document).ready(function(){
 		myVideoPausePlayRequest();
 	});
 
-        /* FullScreen playback
+		/* FullScreen playback
 	==================================================================================*/
 	$('#myVideoFullScrBtn').click(function(){
 		writeLog("myVideoFullScrBtn Clicked");
@@ -194,6 +189,13 @@ $(document).ready(function(){
 	$('#myVideoNextBtn').click(function(){
 		writeLog("myVideoNextBtn Clicked");
 		myVideoNextRequest();
+	});
+	
+	/* previous track
+	==================================================================================*/
+	$('#myVideoPreviousBtn').click(function(){
+		writeLog("myVideoPreviousBtn Clicked");
+		myVideoPreviousRequest();
 	});
 
 	/* FF
@@ -266,10 +268,10 @@ $(document).ready(function(){
 		localStorage.setItem('videoplayer.shuffle', JSON.stringify(Shuffle));
 	});
 
-     setTimeout(function () {
-        //writeLog("setTimeout started");
-        myVideoListRequest();
-    }, 1000);
+	setTimeout(function () {
+		//writeLog("setTimeout started");
+		myVideoListRequest();
+	}, 1000);
 
 
 	//try to close the video if the videoplayer is not the current app
@@ -301,12 +303,14 @@ $(document).ready(function(){
 // Start of Video Player
 // #############################################################################################
 
+
 /* reboot system
 ==========================================================================================================*/
 function myRebootSystem(){
 	writeLog("myRebootSystem called");
-    myVideoWs('reboot', false); //reboot
+	myVideoWs('reboot', false); //reboot
 }
+
 
 /* video list request / response
 ==========================================================================================================*/
@@ -330,8 +334,8 @@ function myVideoListRequest(){
 		}
 
 		src = 'MNTFOLDER=\'' + folderPath + '\'; ';
-                src = src + 'FILES=$(ls -d -1 $MNTFOLDER/sd*/Movies/** | egrep ".avi|.mp4|.wmv|.flv"); ';
-                src = src + 'FILES=$(echo "$FILES" | tr \'\n\' \'|\'); ';
+				src = src + 'FILES=$(ls -d -1 $MNTFOLDER/sd*/Movies/** | egrep ".avi|.mp4|.wmv|.flv"); ';
+				src = src + 'FILES=$(echo "$FILES" | tr \'\n\' \'|\'); ';
 
 
 		src = src + 'echo playback-list#"${FILES}"';
@@ -342,60 +346,61 @@ function myVideoListRequest(){
 
 }
 
+
 function myVideoListResponse(data){
-    writeLog("myVideoListResponse called");
+	writeLog("myVideoListResponse called");
 
-    waitingWS=false;
+	waitingWS=false;
 
-    var videoList = $("#myVideoList");
-    videoList.html("");
+	var videoList = $("#myVideoList");
+	videoList.html("");
 
-    var videos = data.split("|");
-    videos.splice(videos.length - 1);
-    totalVideoListContainer = 1;
+	var videos = data.split("|");
+	videos.splice(videos.length - 1);
+	totalVideoListContainer = 1;
 
-    if(videos[0] === ""){
-        writeLog("No videos found");
-        videoList.html('No videos found<br/><br/>Tap <img src="apps/_videoplayer/templates/VideoPlayer/images/myVideoMovieBtn.png" style="margin-left:8px; margin-right:8px" /> to search again');
-    }
-    else
-    {
+	if(videos[0] === ""){
+		writeLog("No videos found");
+		videoList.html('No videos found<br/><br/>Tap <img src="apps/_videoplayer/templates/VideoPlayer/images/myVideoMovieBtn.png" style="margin-left:8px; margin-right:8px" /> to search again');
+	}
+	else
+	{
 
-        writeLog("myVideoList insert data --- " + data);
+		writeLog("myVideoList insert data --- " + data);
 
-        videoList.append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
-                .addClass("videoListContainer")
-                );
-        videoListUl = $("#ul" + totalVideoListContainer);
+		videoList.append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
+				.addClass("videoListContainer")
+				);
+		videoListUl = $("#ul" + totalVideoListContainer);
 
-        videos.forEach(function(item, index){
+		videos.forEach(function(item, index){
 
 			if ((index > 0 ) && (index) % 8 === 0)
-            {
-                totalVideoListContainer++;
-                videoList.append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
-                        .addClass("videoListContainer")
-                        );
-                videoListUl = $("#ul"+totalVideoListContainer);
+			{
+				totalVideoListContainer++;
+				videoList.append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
+						.addClass("videoListContainer")
+						);
+				videoListUl = $("#ul"+totalVideoListContainer);
 
-            }
+			}
 
-            var videoName = item.replace(folderPath, '');
-            videoName = videoName.substring(videoName.search(/\/movies\//i) + 8);
+			var videoName = item.replace(folderPath, '');
+			videoName = videoName.substring(videoName.search(/\/movies\//i) + 8);
 
-            videoListUl.append($('<li></li>')
-                .attr({
-                    'video-name': videoName,
-                    'video-data': item
-                })
-                .addClass('videoTrack')
-                .html(index + 1 + ". " + videoName.replace(/  /g, " &nbsp;"))
+			videoListUl.append($('<li></li>')
+				.attr({
+					'video-name': videoName,
+					'video-data': item
+				})
+				.addClass('videoTrack')
+				.html(index + 1 + ". " + videoName.replace(/  /g, " &nbsp;"))
 
-            );
+			);
 
-        });
+		});
 
-        totalVideos = videos.length;
+		totalVideos = videos.length;
 		selectedItem=1;
 		handleCommander("ccw");
 
@@ -403,65 +408,68 @@ function myVideoListResponse(data){
 		{
 			$('#myVideoScrollDown').css({'visibility' : 'visible'});
 		}
-    }
+	}
 }
+
 
 /* video list scroll up / down
 ==========================================================================================================*/
 function myVideoListScrollUpDown(action){
 	writeLog("myVideoListScrollUpDown called");
 
-    if(action === 'up'){
-        currentVideoListContainer--;
+	if(action === 'up'){
+		currentVideoListContainer--;
 
-    } else if (action === 'down'){
-        currentVideoListContainer++;
-    }
+	} else if (action === 'down'){
+		currentVideoListContainer++;
+	}
 
-    if(currentVideoListContainer === 0){
-        $('#myVideoScrollUp').css({'visibility' : 'hidden'});
-    } else if(currentVideoListContainer > 0){
-        $('#myVideoScrollUp').css({'visibility' : 'visible'});
-    }
+	if(currentVideoListContainer === 0){
+		$('#myVideoScrollUp').css({'visibility' : 'hidden'});
+	} else if(currentVideoListContainer > 0){
+		$('#myVideoScrollUp').css({'visibility' : 'visible'});
+	}
 
-    if((currentVideoListContainer + 1) === totalVideoListContainer){
-        $('#myVideoScrollDown').css({'visibility' : 'hidden'});
-    } else if((currentVideoListContainer + 1) < totalVideoListContainer){
-        $('#myVideoScrollDown').css({'visibility' : 'visible'});
-    }
+	if((currentVideoListContainer + 1) === totalVideoListContainer){
+		$('#myVideoScrollDown').css({'visibility' : 'hidden'});
+	} else if((currentVideoListContainer + 1) < totalVideoListContainer){
+		$('#myVideoScrollDown').css({'visibility' : 'visible'});
+	}
 
-    $('.videoListContainer').each(function(index){
-        $(this).css({'display' : 'none'});
-    });
+	$('.videoListContainer').each(function(index){
+		$(this).css({'display' : 'none'});
+	});
 
-    $(".videoListContainer:eq(" + currentVideoListContainer + ")").css("display", "");
+	$(".videoListContainer:eq(" + currentVideoListContainer + ")").css("display", "");
 
 }
+
 
 /* start playback request / response
 ==========================================================================================================*/
 function myVideoStartRequest(obj){
-    writeLog("myVideoStartRequest called");
+	writeLog("myVideoStartRequest called");
 
-    currentVideoTrack = $(".videoTrack").index(obj);
-    var videoToPlay = obj.attr('video-data');
-    $('#myVideoName').html('Preparing to play...');
-    $('#myVideoName').css({'display' : 'block'});
-    $('#myVideoStatus').css({'display' : 'block'});
+	currentVideoTrack = $(".videoTrack").index(obj);
+	var videoToPlay = obj.attr('video-data');
+	$('#myVideoName').html('Preparing to play...');
+	$('#myVideoName').css({'display' : 'block'});
+	$('#myVideoStatus').css({'display' : 'block'});
 
-    waitingNext = false;
+	waitingNext = false;
 
-    writeLog("myVideoStartRequest - " + videoToPlay);
+	writeLog("myVideoStartRequest - " + videoToPlay);
 
-    //myVideoWs('killall gplay', false); //start-playback
+	//myVideoWs('killall gplay', false); //start-playback
 
-    writeLog("myVideoStartRequest - Kill gplay");
+	writeLog("myVideoStartRequest - Kill gplay");
 
-    myVideoWs('sync && echo 3 > /proc/sys/vm/drop_caches; ', false); //start-playback
+	//myVideoWs('sync && echo 3 > /proc/sys/vm/drop_caches; ', false); //start-playback
+	myVideoWs('sync; for n in 0 1 2 3; do echo $n > /proc/sys/vm/drop_caches; done;', false);
 
-    $('#myVideoList').css({'visibility' : 'hidden'});
-    $('#myVideoScrollDown').css({'visibility' : 'hidden'});
-    $('#myVideoScrollUp').css({'visibility' : 'hidden'});
+	$('#myVideoList').css({'visibility' : 'hidden'});
+	$('#myVideoScrollDown').css({'visibility' : 'hidden'});
+	$('#myVideoScrollUp').css({'visibility' : 'hidden'});
 
 
     $('#myVideoShuffleBtn').css({'display' : 'none'});
@@ -471,80 +479,79 @@ function myVideoStartRequest(obj){
     $('#myVideoRepeatAllBtn').css({'display' : 'none'});
     $('.rebootBtnDiv').css({'display' : 'none'});
 
+	$('#myVideoPreviousBtn').css({'display' : ''});
+	$('#myVideoRW').css({'display' : ''});
+	$('#myVideoPausePlayBtn').css({'display' : ''});
+	$('#myVideoFF').css({'display' : ''});
+	$('#myVideoNextBtn').css({'display' : ''});
+	$('#myVideoStopBtn').css({'display' : ''});
+	$('#myVideoName').html(obj.attr('video-name').replace(/ /g, "&nbsp;"));
 
-    $('#myVideoRW').css({'display' : ''});
-    $('#myVideoPausePlayBtn').css({'display' : ''});
-    $('#myVideoFF').css({'display' : ''});
-    $('#myVideoNextBtn').css({'display' : ''});
-    $('#myVideoStopBtn').css({'display' : ''});
-    $('#myVideoName').html(obj.attr('video-name').replace(/ /g, "&nbsp;"));
-
-    //$('#videoPlayControl').css({'display' : 'block'});
-    $('#videoPlayControl').css('cssText', 'display: block !important');
-    $('#videoPlayBtn').css({'background-image' : ''});
-
-
-    try
-    {
-        src = 'sleep 0.3; ';
-
-        writeLog('start playing');
-
-        writeLog(videoToPlay);
-
-        //Screen size 800w*480h
-        //Small screen player 700w*367h
-
-        src = src + '/usr/bin/gplay --video-sink="mfw_v4lsink';
-
-        if (!FullScreen)
-        {
-                src = src + ' disp-width=700 disp-height=367 axis-left=50 axis-top=64';
-        }
-
-        src = src + '" --audio-sink=alsasink "' + videoToPlay + '" 2>&1 ';
-
-        if (enableLog)
-        {
-                src = src + "| tee -a /jci/gui/apps/_videoplayer/log/videoplayer_log.txt;";
-        }
+	//$('#videoPlayControl').css({'display' : 'block'});
+	$('#videoPlayControl').css('cssText', 'display: block !important');
+	$('#videoPlayBtn').css({'background-image' : ''});
 
 
-        writeLog(src);
+	try
+	{
+		src = 'sleep 0.3; ';
 
-        CurrentVideoPlayTime = -5;
+		writeLog('start playing');
 
-        wsVideo = new WebSocket('ws://127.0.0.1:9998/');
+		writeLog(videoToPlay);
 
-        wsVideo.onopen = function(){
-                wsVideo.send(src);
+		//Screen size 800w*480h
+		//Small screen player 700w*367h
 
-                startPlayTimeInterval();
+		src = src + '/usr/bin/gplay --video-sink="mfw_v4lsink';
 
-        };
+		if (!FullScreen)
+		{
+				src = src + ' disp-width=700 disp-height=367 axis-left=50 axis-top=64';
+		}
 
-        wsVideo.onmessage=function(event)
-        {
-                //$('#myVideoStatus').html(event.data + " - " + event.data.length);
+		src = src + '" --audio-sink=alsasink "' + videoToPlay + '" 2>&1 ';
 
-                checkStatus(event.data);
+		if (enableLog)
+		{
+				src = src + "| tee -a /jci/gui/apps/_videoplayer/log/videoplayer_log.txt;";
+		}
 
-        };
 
-    }
-    catch(err)
-    {
-            writeLog("Error: " + err);
-    }
+		writeLog(src);
+
+		CurrentVideoPlayTime = -5;
+
+		wsVideo = new WebSocket('ws://127.0.0.1:9998/');
+
+		wsVideo.onopen = function(){
+				wsVideo.send(src);
+
+				startPlayTimeInterval();
+
+		};
+
+		wsVideo.onmessage=function(event)
+		{
+				//$('#myVideoStatus').html(event.data + " - " + event.data.length);
+
+				checkStatus(event.data);
+
+		};
+
+	}
+	catch(err)
+	{
+			writeLog("Error: " + err);
+	}
 
 }
 
 
-
-/* playback next track request / response
+/* playback next track request
 ==========================================================================================================*/
 function myVideoNextRequest(){
-    writeLog("myVideoNextRequest called");
+	writeLog("myVideoNextRequest called");
 
 	$('#myVideoName').html('');
 	$('#myVideoStatus').html('');
@@ -619,10 +626,43 @@ function myVideoNextRequest(){
 	}
 }
 
+
+/* playback previous track request
+==========================================================================================================*/
+function myVideoPreviousRequest(){
+	writeLog("myVideoPreviousRequest called");
+
+	$('#myVideoName').html('');
+	$('#myVideoStatus').html('');
+
+	clearInterval(intervalPlaytime);
+
+	if (previousVideoTrack === null)
+	{
+		previousVideoTrack = currentVideoTrack;
+	}
+	
+	if (!waitingWS)
+	{
+		waitingWS = true;
+
+		wsVideo.send('x');
+		wsVideo.close();
+		wsVideo=null;
+
+		var previousVideoObject = $(".videoTrack:eq(" + previousVideoTrack + ")");
+		
+		myVideoStartRequest(previousVideoObject);
+
+		waitingWS = false;
+	}
+}
+
+
 /* stop playback request / response
 ==========================================================================================================*/
 function myVideoStopRequest(){
-    writeLog("myVideoStopRequest called");
+	writeLog("myVideoStopRequest called");
 
 	clearInterval(intervalPlaytime);
 	$('#myVideoName').html('');
@@ -630,23 +670,22 @@ function myVideoStopRequest(){
 	VideoPaused=false;
 	$('#myVideoPausePlayBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPauseBtn.png)'});
 
-    //myVideoWs('killall gplay; ', false); //playback-stop
 	wsVideo.send('x');
 	wsVideo.close();
-	//wsVideo = null;
+	wsVideo = null;
 
 	currentVideoTrack = null;
 
+	$('#myVideoPreviousBtn').css({'display' : 'none'});
 	$('#myVideoRW').css({'display' : 'none'});
 	$('#myVideoPausePlayBtn').css({'display' : 'none'});
 	$('#myVideoFF').css({'display' : 'none'});
-    $('#myVideoNextBtn').css({'display' : 'none'});
-    $('#myVideoStopBtn').css({'display' : 'none'});
+	$('#myVideoNextBtn').css({'display' : 'none'});
+	$('#myVideoStopBtn').css({'display' : 'none'});
 	$('#myVideoName').css({'display' : 'none'});
-    $('#myVideoStatus').css({'display' : 'none'});
-	//$('#videoPlayControl').css({'display' : 'none'});
+	$('#myVideoStatus').css({'display' : 'none'});
 	$('#videoPlayControl').css('cssText', 'display: none !important');
-    $('#videoPlayBtn').css({'background-image' : ''});
+	$('#videoPlayBtn').css({'background-image' : ''});
 
 	$('#myVideoShuffleBtn').css({'display' : ''});
     $('#myVideoMovieBtn').css({'display' : ''});
@@ -664,11 +703,11 @@ function myVideoStopRequest(){
 /* Play/Pause playback request / response
 ==========================================================================================================*/
 function myVideoPausePlayRequest(){
-    writeLog("myVideoPausePlayRequest called");
+	writeLog("myVideoPausePlayRequest called");
 
-    if (!waitingWS)
-    {
-        waitingWS = true;
+	if (!waitingWS)
+	{
+		waitingWS = true;
 
 		wsVideo.send('a');
 
@@ -686,17 +725,17 @@ function myVideoPausePlayRequest(){
 		}
 
 		waitingWS = false;
-    }
+	}
 }
 
 /* FF playback request / response
 ==========================================================================================================*/
 function myVideoFFRequest(){
-    writeLog("myVideoFFRequest called");
+	writeLog("myVideoFFRequest called");
 
-    if (!waitingWS)
-    {
-        waitingWS = true;
+	if (!waitingWS)
+	{
+		waitingWS = true;
 
 		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 12 < TotalVideoTime)
 		{
@@ -707,17 +746,18 @@ function myVideoFFRequest(){
 		}
 
 		waitingWS = false;
-    }
+	}
 }
+
 
 /* RW playback request / response
 ==========================================================================================================*/
 function myVideoRWRequest(){
-    writeLog("myVideoRWRequest called");
+	writeLog("myVideoRWRequest called");
 
-    if (!waitingWS)
-    {
-        waitingWS = true;
+	if (!waitingWS)
+	{
+		waitingWS = true;
 
 		CurrentVideoPlayTime = CurrentVideoPlayTime - 10;
 
@@ -731,15 +771,16 @@ function myVideoRWRequest(){
 		wsVideo.send('t' + CurrentVideoPlayTime);
 
 		waitingWS = false;
-    }
+	}
 }
 
 
-//toggles fullscreen during playback
+/*toggles fullscreen during playback
+==========================================================================================================*/
 function fullScreenRequest()
 {
 	if (!waitingWS)
-    {
+	{
 		waitingWS = true;
 
 		if(FullScreen){
@@ -762,12 +803,12 @@ function fullScreenRequest()
 /* write log
 ==========================================================================================================*/
 function writeLog(logText){
-    if (enableLog)
-    {
-        var dt = new Date();
-        myVideoWs('echo "' + dt.toISOString() + '; ' + logText.replace('"', '\"').replace("$", "\\$").replace(">", "\>").replace("<", "\<") +
+	if (enableLog)
+	{
+		var dt = new Date();
+		myVideoWs('echo "' + dt.toISOString() + '; ' + logText.replace('"', '\"').replace("$", "\\$").replace(">", "\>").replace("<", "\<") +
 			'" >> /jci/gui/apps/_videoplayer/log/videoplayer_log.txt', false); //write_log
-    }
+	}
 }
 
 
@@ -775,7 +816,7 @@ function writeLog(logText){
 ============================================================================================= */
 function checkStatus(state)
 {
-	var res = event.data.trim();
+	var res = state.trim();
 
 			if (res.indexOf("Duration")> -1)
 			{
@@ -797,6 +838,7 @@ function checkStatus(state)
 				$('#myVideoStatus').html("Memory Error. Please Restart CMU");
 			}
 }
+
 
 function startPlayTimeInterval()
 {
@@ -989,33 +1031,34 @@ function handleCommander(eventID)
 	}
 }
 
+
 /* websocket
 ============================================================================================= */
 function myVideoWs(action, waitMessage){
 
 	var ws = new WebSocket('ws://127.0.0.1:9998/');
 
-    ws.onmessage = function(event){
-        var res = event.data.split('#');
+	ws.onmessage = function(event){
+		var res = event.data.split('#');
 
 		ws.close();
 		ws=null;
 
-        switch(res[0]){
-                        case 'playback-list':       myVideoListResponse(res[1]);
-				break;
+		switch(res[0]){
+			case 'playback-list':	myVideoListResponse(res[1]);
+			break;
 		}
 
-    };
+	};
 
 	ws.onopen = function(){
-        ws.send(action);
+		ws.send(action);
 		if (!waitMessage)
 		{
 			ws.close();
 			ws=null;
 		}
-    };
+	};
 }
 // #############################################################################################
 // End of Video Player
