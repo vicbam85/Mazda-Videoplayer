@@ -52,9 +52,10 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties)
 	'<li id="myVideoRW" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/RW.png)"></li>'+
 	'<li id="myVideoPreviousBtn" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPreviousBtn.png)"></li>'+
 	'<li id="myVideoMovieBtn" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoMovieBtn.png)"><a>Search Videos</a></li>'+
-	'<li id="myVideoFullScrBtn" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)"><a>Full Screen</a></li>' +
-	'<li id="myVideoRepeatBtn" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)"><a>Repeat 1</a></li>'+
-	'<li id="myVideoShuffleBtn" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)"><a>Shuffle</a></li>'+
+	'<li id="myVideoFullScrBtn"><a>Full Screen</a></li>' +
+	'<li id="myVideoRepeatBtn"><a>Repeat 1</a></li>'+
+	'<li id="myVideoShuffleBtn"><a>Shuffle</a></li>'+
+	'<li id="myVideoRepeatAllBtn"><a>Repeat All</a></li>'+
 	'<li class="rebootBtnDiv" style="float:left !important; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/rebootSys.png)"></li>'+
 	'</ul>'+
 	'<div id="myVideoName" style="font-style:italic"></div>'+
@@ -91,9 +92,7 @@ VideoPlayerTmplt.prototype.handleControllerEvent = function(eventID)
 {
     log.debug("handleController() called, eventID: " + eventID);
 
-	var retValue = null;
-
-	handleCommander(eventID);
+	var retValue = handleCommander(eventID);
 
 	//case "down":
 	//case "up":
@@ -113,7 +112,7 @@ VideoPlayerTmplt.prototype.handleControllerEvent = function(eventID)
 	//case "upHold":
 	//case "downHold":
 
-	retValue = "consumed";
+	//retValue = "consumed";
 	//retValue = 'giveFocusLeft';
 
 	return retValue;
