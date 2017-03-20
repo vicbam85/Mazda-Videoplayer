@@ -21,17 +21,26 @@
  *		Most of the times it stops the video when you put reverse with no problems
  * v2.7 Include pause when touching the video in the center, rewind when touching the left side and Fast Forward when touching the right side. (15% of the screen each)
  *		Correct problem when stopping a paused video (the icon shows an incorrect image at the beginning of the next video)
- * v2.8 Multicontroller support - Tilt up/down = Scroll video list
- *		Press command knob - Play/pause
- *		Tilt Right - Next
- *		Tilt left - Stop
- *		Rotate command knob CCW/CW - RW/FF
+ * v2.8 |----------------------------------------------------------------------------------------------|
+ *		|- Multicontroller support ----- [In Video List] ------------ [During Playback] ---------------|
+ *		|----------------------------------------------------------------------------------------------|
+ *		|- Press command knob ---------- [Select video] ------------- [Play/pause] --------------------|
+ *		|- Tilt up --------------------- [Video list pgup] ---------- [Toggle fullscreen(next video)] -|
+ *		|- Tilt down ------------------- [Video list pgdn] ---------- [Stop] --------------------------|
+ *		|- Tilt Right ------------------ [Toggle shuffle mode] ------ [Next] --------------------------|
+ *		|- Tilt left ------------------- [Toggle repeat all] -------- [Previous] ----------------------|
+ *		|- Rotate command knob CCW/CW -- [Scroll video list up/dn] -- [RW/FF (10 seconds)] ------------|
+ *		|----------------------------------------------------------------------------------------------|
  *		Lowered RW/FF time from 30s => 10s for beter control with command knob rotation
  *		Change method of managing the video list to jquery instead of bash
  *		Avoid problems when using files with ', " or other special characters. You must remove this character from your video name
  *		Use of the command knob to control the playback and to select the videos
  *		Use of the websocketd file provided by diginix
- *		Previous video option (only the previous)
+ *		Previous video option
+ * v2.9 Repeat All option: Keep track of recently played videos so videos aren't repeated until the entire list is played.
+ *		Toggling repeat 1/all or shuffle OFF resets recentlyPlayed list; shuffle ON, stopping playback, and rebooting do not.
+ *		After last video in the list is played, jumps to the first video in the list. 
+ *		User variables are saved to localStorage: shuffle, repeat 1, repeat all, fullscreen, and recently played list.
  * TODO:
  *		Get the time from gplay instead of the javascript in order to FF or RW more accurately
  *		Get Errors from gplay
@@ -61,8 +70,7 @@ var TotalVideoTime = null;
 var intervalPlaytime;
 var waitingNext = false;
 var selectedItem = 0;
-var previousVideoTrack = null;
-var recentlyPlayed = [];
+var recentlyPlayed = JSON.parse(localStorage.getItem('videoplayer.recentlyplayed')) || [];
 
 var boxChecked = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)';
 var boxUncheck = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)';
@@ -456,11 +464,17 @@ function myVideoStartRequest(obj){
 	$('#myVideoName').html('Preparing to play...');
 	$('#myVideoName').css({'display' : 'block'});
 	$('#myVideoStatus').css({'display' : 'block'});
+	writeLog("Recently Played: " + recentlyPlayed);
 
 	waitingNext = false;
 
-	writeLog("myVideoStartRequest - " + videoToPlay);
+	writeLog("myVideoStartRequest - Video #" + currentVideoTrack + ": " + videoToPlay);
 
+	if (recentlyPlayed.indexOf(currentVideoTrack) === -1)
+	{
+		recentlyPlayed.push(currentVideoTrack);
+		writeLog("Add Track " + currentVideoTrack + " to recentlyPlayed list");		
+	}
 	//myVideoWs('killall gplay', false); //start-playback
 
 	writeLog("myVideoStartRequest - Kill gplay");
@@ -526,17 +540,17 @@ function myVideoStartRequest(obj){
 		wsVideo = new WebSocket('ws://127.0.0.1:9998/');
 
 		wsVideo.onopen = function(){
-				wsVideo.send(src);
-
-				startPlayTimeInterval();
+			wsVideo.send(src);
+			
+			startPlayTimeInterval();
 
 		};
 
 		wsVideo.onmessage=function(event)
 		{
-				//$('#myVideoStatus').html(event.data + " - " + event.data.length);
+			//$('#myVideoStatus').html(event.data + " - " + event.data.length);
 
-				checkStatus(event.data);
+			checkStatus(event.data);
 
 		};
 
@@ -565,7 +579,7 @@ function myVideoNextRequest(){
 
 		var nextVideoTrack=0;
 
-		previousVideoTrack = currentVideoTrack;
+//		previousVideoTrack = currentVideoTrack;
 
 		if (currentVideoTrack) 
 		{
@@ -573,11 +587,6 @@ function myVideoNextRequest(){
 		}
 		if(!Repeat)
 		{
-			if (recentlyPlayed.indexOf(currentVideoTrack) === -1)
-			{
-				recentlyPlayed.push(currentVideoTrack);
-			}
-		 
 			if (recentlyPlayed.length >= totalVideos) 
 			{
 				if (!RepeatAll) 
@@ -592,6 +601,7 @@ function myVideoNextRequest(){
 					recentlyPlayed = [];
 				}
 			}
+				localStorage.setItem('videoplayer.recentlyplayed', JSON.stringify(recentlyPlayed));
 			if (Shuffle)
 			{
 				while (recentlyPlayed.indexOf(nextVideoTrack) !== -1 || nextVideoTrack === currentVideoTrack)
@@ -633,22 +643,27 @@ function myVideoNextRequest(){
 /* playback previous track request
 ==========================================================================================================*/
 function myVideoPreviousRequest(){
-	writeLog("myVideoPreviousRequest called");
+    writeLog("myVideoPreviousRequest called");
 
-	$('#myVideoName').html('');
-	$('#myVideoStatus').html('');
+    $('#myVideoName').html('');
+    $('#myVideoStatus').html('');
 
-	clearInterval(intervalPlaytime);
-	
-	previousVideoTrack = recentlyPlayed.pop();
+    clearInterval(intervalPlaytime);
 
-	if (previousVideoTrack === null)
-	{
+    var previousVideoTrack = null;
+
+    if (recentlyPlayed.length > 0)
+    {
+		  previousVideoTrack = recentlyPlayed.pop();
+    }
+
+    if (previousVideoTrack === null)
+    {
 		previousVideoTrack = currentVideoTrack;
-	}
-	
-	if (!waitingWS)
-	{
+    }
+
+    if (!waitingWS)
+    {
 		waitingWS = true;
 
 		wsVideo.send('x');
@@ -656,11 +671,11 @@ function myVideoPreviousRequest(){
 		wsVideo=null;
 
 		var previousVideoObject = $(".videoTrack:eq(" + previousVideoTrack + ")");
-		
+
 		myVideoStartRequest(previousVideoObject);
 
 		waitingWS = false;
-	}
+    }
 }
 
 
@@ -970,6 +985,12 @@ function handleCommander(eventID)
 					selectedItem--;
 					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
 				}
+			else //if (selectedItem <= 0)
+			{
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+				selectedItem = totalVideos;
+				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+			}
 			}
 			break;
 
@@ -991,6 +1012,12 @@ function handleCommander(eventID)
 						$('#myVideoScrollDown').click();
 					}
 				}
+			else //if (selectedItem >= totalVideos)
+			{
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+				selectedItem = 1;
+				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+			}
 			}
 			break;
 
@@ -998,6 +1025,10 @@ function handleCommander(eventID)
 			if (currentVideoTrack !== null)
 			{
 				$('#myVideoPreviousBtn').click();
+			}
+			else
+			{
+				$('#myVideoRepeatAllBtn').click();
 			}
 			break;
 
