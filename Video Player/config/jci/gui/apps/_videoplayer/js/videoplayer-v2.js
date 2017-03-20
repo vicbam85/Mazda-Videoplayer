@@ -61,7 +61,7 @@ var TotalVideoTime = null;
 var intervalPlaytime;
 var waitingNext = false;
 var selectedItem = 0;
-var previousVideoTrack = null;
+//var previousVideoTrack = null; //changed to local variable
 var recentlyPlayed = [];
 
 var boxChecked = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)';
@@ -526,17 +526,17 @@ function myVideoStartRequest(obj){
 		wsVideo = new WebSocket('ws://127.0.0.1:9998/');
 
 		wsVideo.onopen = function(){
-				wsVideo.send(src);
+			wsVideo.send(src);
 
-				startPlayTimeInterval();
+			startPlayTimeInterval();
 
 		};
 
 		wsVideo.onmessage=function(event)
 		{
-				//$('#myVideoStatus').html(event.data + " - " + event.data.length);
+			//$('#myVideoStatus').html(event.data + " - " + event.data.length);
 
-				checkStatus(event.data);
+			checkStatus(event.data);
 
 		};
 
@@ -565,7 +565,7 @@ function myVideoNextRequest(){
 
 		var nextVideoTrack=0;
 
-		previousVideoTrack = currentVideoTrack;
+//		previousVideoTrack = currentVideoTrack;
 
 		if (currentVideoTrack) 
 		{
@@ -633,22 +633,27 @@ function myVideoNextRequest(){
 /* playback previous track request
 ==========================================================================================================*/
 function myVideoPreviousRequest(){
-	writeLog("myVideoPreviousRequest called");
+    writeLog("myVideoPreviousRequest called");
 
-	$('#myVideoName').html('');
-	$('#myVideoStatus').html('');
+    $('#myVideoName').html('');
+    $('#myVideoStatus').html('');
 
-	clearInterval(intervalPlaytime);
-	
-	previousVideoTrack = recentlyPlayed.pop();
+    clearInterval(intervalPlaytime);
 
-	if (previousVideoTrack === null)
-	{
+    var previousVideoTrack = null;
+
+    if (recentlyPlayed.length > 0)
+    {
+        previousVideoTrack = recentlyPlayed.pop();
+    }
+
+    if (previousVideoTrack === null)
+    {
 		previousVideoTrack = currentVideoTrack;
-	}
-	
-	if (!waitingWS)
-	{
+    }
+
+    if (!waitingWS)
+    {
 		waitingWS = true;
 
 		wsVideo.send('x');
@@ -656,11 +661,11 @@ function myVideoPreviousRequest(){
 		wsVideo=null;
 
 		var previousVideoObject = $(".videoTrack:eq(" + previousVideoTrack + ")");
-		
+
 		myVideoStartRequest(previousVideoObject);
 
 		waitingWS = false;
-	}
+    }
 }
 
 
