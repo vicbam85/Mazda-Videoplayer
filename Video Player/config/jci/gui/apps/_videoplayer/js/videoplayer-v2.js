@@ -31,7 +31,8 @@
  *		Avoid problems when using files with ', " or other special characters. You must remove this character from your video name
  *		Use of the command knob to control the playback and to select the videos
  *		Use of the websocketd file provided by diginix
- *		Previous video option (only the previous)
+ *		Previous video option
+ *		Option to select the playback option with the commander (tilt left or right)
  * TODO:
  *		Get the time from gplay instead of the javascript in order to FF or RW more accurately
  *		Get Errors from gplay
