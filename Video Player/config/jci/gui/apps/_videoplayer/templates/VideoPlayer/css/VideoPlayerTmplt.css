@@ -156,6 +156,7 @@
     width: 70%;
     background-position: center;
     background-repeat: no-repeat;
+	position: absolute;
 	z-index: 20200;
 }
 .selectedItem {

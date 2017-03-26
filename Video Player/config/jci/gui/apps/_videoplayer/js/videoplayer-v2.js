@@ -60,8 +60,10 @@ var CurrentVideoPlayTime = -5; //The gplay delays ~5s to start
 var TotalVideoTime = null;
 var intervalPlaytime;
 var waitingNext = false;
-var selectedItem = 0;
+var selectedItem = 0; 
+var selectedOptionItem = -1; //6 ??
 //var previousVideoTrack = null; //changed to local variable
+//var recentlyPlayed = JSON.parse(localStorage.getItem('videoplayer.recentlyPlayed')) || [];
 var recentlyPlayed = [];
 
 var boxChecked = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)';
@@ -81,10 +83,12 @@ $(document).ready(function(){
 	{
 
 	}
+	
 	(FullScreen) ? $('#myVideoFullScrBtn').css({'background-image' : boxChecked}) : $('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
 	(Shuffle) ? $('#myVideoShuffleBtn').css({'background-image' : boxChecked}) : $('#myVideoShuffleBtn').css({'background-image' : boxUncheck});
 	(Repeat) ? $('#myVideoRepeatBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatBtn').css({'background-image' : boxUncheck});
 	(RepeatAll) ? $('#myVideoRepeatAllBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatAllBtn').css({'background-image' : boxUncheck});
+	
 //	if (window.File && window.FileReader && window.FileList && window.Blob) {
 //		$('#myVideoList').html("step 1");
 //	}
@@ -191,7 +195,7 @@ $(document).ready(function(){
 		writeLog("myVideoNextBtn Clicked");
 		myVideoNextRequest();
 	});
-	
+
 	/* previous track
 	==================================================================================*/
 	$('#myVideoPreviousBtn').click(function(){
@@ -272,7 +276,15 @@ $(document).ready(function(){
 	setTimeout(function () {
 		//writeLog("setTimeout started");
 		myVideoListRequest();
-	}, 1000);
+		
+		/* if (recentlyPlayed.length > 0)
+		{
+			selectedItem = recentlyPlayed[recentlyPlayed.length -1];
+			selectedItem++;
+			currentVideoListContainer = Math.floor(selectedItem / 8);
+			handleCommander("ccw");
+		} */
+	}, 500);
 
 
 	//try to close the video if the videoplayer is not the current app
@@ -608,6 +620,8 @@ function myVideoNextRequest(){
 				}
 			}
 		}
+		
+		localStorage.setItem('videoplayer.recentlyPlayed', JSON.stringify(recentlyPlayed));
 
 		writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
 
@@ -646,6 +660,8 @@ function myVideoPreviousRequest(){
     {
         previousVideoTrack = recentlyPlayed.pop();
     }
+	
+	localStorage.setItem('videoplayer.recentlyPlayed', JSON.stringify(recentlyPlayed));
 
     if (previousVideoTrack === null)
     {
@@ -801,7 +817,7 @@ function fullScreenRequest()
 			FullScreen = true;
 			$('#myVideoFullScrBtn').css({'background-image' : boxChecked});
 		}
-		
+
 		localStorage.setItem('videoplayer.fullscreen',  JSON.stringify(FullScreen));
 		wsVideo.send('f');
 
@@ -850,6 +866,8 @@ function checkStatus(state)
 }
 
 
+/* Control Playback
+============================================================================================= */
 function startPlayTimeInterval()
 {
 	intervalPlaytime = setInterval(function (){
@@ -895,7 +913,8 @@ function startPlayTimeInterval()
 }
 
 
-//function to handle the commander
+/* function to handle the commander
+============================================================================================= */
 function handleCommander(eventID)
 {
 	writeLog('handleCommander - ' + eventID);
@@ -963,6 +982,10 @@ function handleCommander(eventID)
 			}
 			else
 			{
+				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return val.substring(val.indexOf("url("));});
+
 				if (selectedItem > 0)
 				{
 					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
@@ -985,6 +1008,10 @@ function handleCommander(eventID)
 			}
 			else
 			{
+				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return val.substring(val.indexOf("url("));});
+
 				if (selectedItem + 1 < totalVideos)
 				{
 					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
@@ -1004,6 +1031,25 @@ function handleCommander(eventID)
 			{
 				$('#myVideoPreviousBtn').click();
 			}
+			else
+			{
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+
+				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return val.substring(val.indexOf("url("));});
+				
+				selectedOptionItem++;
+
+				if (selectedOptionItem > 4) //10
+				{
+					selectedOptionItem = 4;
+				}
+
+				$(".playbackOption").eq(selectedOptionItem).addClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
+			}
 			break;
 
 		case "select":
@@ -1013,7 +1059,16 @@ function handleCommander(eventID)
 			}
 			else
 			{
-				myVideoStartRequest($(".videoTrack").eq(selectedItem));
+				if ($(".videoTrack").eq(selectedItem).hasClass("selectedItem"))
+					{
+						myVideoStartRequest($(".videoTrack").eq(selectedItem));
+					}
+				else
+					{
+						$('.playbackOption').eq(selectedOptionItem).click();
+						$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+							return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
+					}
 			}
 			break;
 
@@ -1024,14 +1079,30 @@ function handleCommander(eventID)
 			}
 			else
 			{
-				$('#myVideoShuffleBtn').click();
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+
+				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return val.substring(val.indexOf("url("));});
+
+				selectedOptionItem--;
+
+				if (selectedOptionItem < 0) //6
+				{
+					selectedOptionItem = 0;
+				}
+
+				$(".playbackOption").eq(selectedOptionItem).addClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
+
 			}
 			break;
 
 		default:
 			return "ignored";
 			break;
-			
+
 	}
 	return "consumed";
 }
