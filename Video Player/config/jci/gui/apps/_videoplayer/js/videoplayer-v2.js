@@ -41,6 +41,7 @@
  *			Toggling repeat 1/all or shuffle OFF resets recentlyPlayed list; shuffle ON, stopping playback, and rebooting do not.
  *			After last video in the list is played, jumps to the first video in the list.
  *			User variables are saved to localStorage: shuffle, repeat 1, repeat all, fullscreen, and recently played list.
+ *		Option to select the playback option with the commander (tilt left or right)
  * TODO:
  *			Get the time from gplay instead of the javascript in order to FF or RW more accurately
  *			Get Errors from gplay
@@ -69,6 +70,8 @@ var intervalPlaytime;
 var waitingNext = false;
 var selectedItem = 0;
 var recentlyPlayed = JSON.parse(localStorage.getItem('videoplayer.recentlyplayed')) || [];
+var selectedOptionItem = -1; //6 ??
+var recentlyPlayed = [];
 
 var boxChecked = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)';
 var boxUncheck = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)';
@@ -87,10 +90,12 @@ $(document).ready(function(){
 	{
 
 	}
+	
 	(FullScreen) ? $('#myVideoFullScrBtn').css({'background-image' : boxChecked}) : $('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
 	(Shuffle) ? $('#myVideoShuffleBtn').css({'background-image' : boxChecked}) : $('#myVideoShuffleBtn').css({'background-image' : boxUncheck});
 	(Repeat) ? $('#myVideoRepeatBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatBtn').css({'background-image' : boxUncheck});
 	(RepeatAll) ? $('#myVideoRepeatAllBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatAllBtn').css({'background-image' : boxUncheck});
+	
 //	if (window.File && window.FileReader && window.FileList && window.Blob) {
 //		$('#myVideoList').html("step 1");
 //	}
@@ -179,7 +184,7 @@ $(document).ready(function(){
 
 	/* stop playback
 	==================================================================================*/
-	$('#myVideoStopBtn').click(function(){
+	$('#myVideoStopBtn, #videoStopBtn').click(function(){
 		writeLog("myVideoStopBtn Clicked");
 		myVideoStopRequest();
 	});
@@ -193,14 +198,14 @@ $(document).ready(function(){
 
 	/* next track
 	==================================================================================*/
-	$('#myVideoNextBtn').click(function(){
+	$('#myVideoNextBtn, #videoNextBtn').click(function(){
 		writeLog("myVideoNextBtn Clicked");
 		myVideoNextRequest();
 	});
 
 	/* previous track
 	==================================================================================*/
-	$('#myVideoPreviousBtn').click(function(){
+	$('#myVideoPreviousBtn, #videoPrevBtn').click(function(){
 		writeLog("myVideoPreviousBtn Clicked");
 		myVideoPreviousRequest();
 	});
@@ -229,7 +234,7 @@ $(document).ready(function(){
 
 	/* repeat option (looping single track)
 	==================================================================================*/
-	$('#myVideoRepeatBtn').click(function(){
+	$('#myVideoRepeatBtn, #videoShuffleBtn').click(function(){
 		writeLog("myVideoRepeatBtn Clicked");
 		if(Repeat){
 			Repeat = false;
@@ -278,7 +283,15 @@ $(document).ready(function(){
 	setTimeout(function () {
 		//writeLog("setTimeout started");
 		myVideoListRequest();
-	}, 1000);
+		
+		/* if (recentlyPlayed.length > 0)
+		{
+			selectedItem = recentlyPlayed[recentlyPlayed.length -1];
+			selectedItem++;
+			currentVideoListContainer = Math.floor(selectedItem / 8);
+			handleCommander("ccw");
+		} */
+	}, 500);
 
 
 	//try to close the video if the videoplayer is not the current app
@@ -755,7 +768,7 @@ function myVideoFFRequest(){
 	{
 		waitingWS = true;
 
-		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 12 < TotalVideoTime)
+		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 11 < TotalVideoTime)
 		{
 			CurrentVideoPlayTime = CurrentVideoPlayTime + 10;
 			wsVideo.send('e');
@@ -858,6 +871,8 @@ function checkStatus(state)
 }
 
 
+/* Control Playback
+============================================================================================= */
 function startPlayTimeInterval()
 {
 	intervalPlaytime = setInterval(function (){
@@ -903,7 +918,8 @@ function startPlayTimeInterval()
 }
 
 
-//function to handle the commander
+/* function to handle the commander
+============================================================================================= */
 function handleCommander(eventID)
 {
 	writeLog('handleCommander - ' + eventID);
@@ -971,6 +987,10 @@ function handleCommander(eventID)
 			}
 			else
 			{
+				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return val.substring(val.indexOf("url("));});
+
 				if (selectedItem > 0)
 				{
 					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
@@ -999,6 +1019,10 @@ function handleCommander(eventID)
 			}
 			else
 			{
+				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return val.substring(val.indexOf("url("));});
+
 				if (selectedItem + 1 < totalVideos)
 				{
 					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
@@ -1026,7 +1050,22 @@ function handleCommander(eventID)
 			}
 			else
 			{
-				$('#myVideoRepeatAllBtn').click();
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+
+				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return val.substring(val.indexOf("url("));});
+				
+				selectedOptionItem++;
+
+				if (selectedOptionItem > 4) //10
+				{
+					selectedOptionItem = 4;
+				}
+
+				$(".playbackOption").eq(selectedOptionItem).addClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
 			}
 			break;
 
@@ -1037,7 +1076,16 @@ function handleCommander(eventID)
 			}
 			else
 			{
-				myVideoStartRequest($(".videoTrack").eq(selectedItem));
+				if ($(".videoTrack").eq(selectedItem).hasClass("selectedItem"))
+					{
+						myVideoStartRequest($(".videoTrack").eq(selectedItem));
+					}
+				else
+					{
+						$('.playbackOption').eq(selectedOptionItem).click();
+						$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+							return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
+					}
 			}
 			break;
 
@@ -1048,7 +1096,23 @@ function handleCommander(eventID)
 			}
 			else
 			{
-				$('#myVideoShuffleBtn').click();
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+
+				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return val.substring(val.indexOf("url("));});
+
+				selectedOptionItem--;
+
+				if (selectedOptionItem < 0) //6
+				{
+					selectedOptionItem = 0;
+				}
+
+				$(".playbackOption").eq(selectedOptionItem).addClass("selectedItem");
+				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
+
 			}
 			break;
 
