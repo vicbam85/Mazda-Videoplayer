@@ -37,6 +37,7 @@
  *			Use of the command knob to control the playback and to select the videos
  *			Use of the websocketd file provided by diginix
  *			Previous video option
+*			Option to select the playback option with the commander (tilt left or right)
  * v2.9 Repeat All option: Keep track of recently played videos so videos aren't repeated until the entire list is played.
  *			Toggling repeat 1/all or shuffle OFF resets recentlyPlayed list; shuffle ON, stopping playback, and rebooting do not.
  *			After last video in the list is played, jumps to the first video in the list.
@@ -249,7 +250,7 @@ $(document).ready(function(){
 
 	/* repeat all option (loop entire video list)
 	==================================================================================*/
-	$('#myVideoRepeatAllBtn').click(function(){
+	$('#myVideoRepeatAllBtn, #videoReAllBtn').click(function(){
 		writeLog("myVideoRepeatAllBtn Clicked");
 		if(RepeatAll){
 			RepeatAll = false;
@@ -264,7 +265,7 @@ $(document).ready(function(){
 
 	/* Shuffle option
 	==================================================================================*/
-	$('#myVideoShuffleBtn').click(function(){
+	$('#myVideoShuffleBtn, #videoShuffleBtn').click(function(){
 		writeLog("myVideoShuffleBtn Clicked");
 		if(Shuffle)
 		{
@@ -292,6 +293,11 @@ $(document).ready(function(){
 			handleCommander("ccw");
 		} */
 	}, 500);
+/* Toggle Background
+==================================================================================*/
+$('#toggleBgBtn').click(function(){
+	$('#myVideoContainer').toggleClass('noBg');
+});
 
 
 	//try to close the video if the videoplayer is not the current app
@@ -488,7 +494,7 @@ function myVideoStartRequest(obj){
 	}
 	//myVideoWs('killall gplay', false); //start-playback
 
-	writeLog("myVideoStartRequest - Kill gplay");
+	//writeLog("myVideoStartRequest - Kill gplay");
 
 	//myVideoWs('sync && echo 3 > /proc/sys/vm/drop_caches; ', false); //start-playback
 	myVideoWs('sync; for n in 0 1 2 3; do echo $n > /proc/sys/vm/drop_caches; done;', false);
@@ -514,8 +520,7 @@ function myVideoStartRequest(obj){
 	$('#myVideoName').html(obj.attr('video-name').replace(/ /g, "&nbsp;"));
 
 	//$('#videoPlayControl').css({'display' : 'block'});
-	$('#videoPlayControl').css('cssText', 'display: block !important');
-	$('#videoPlayBtn').css({'background-image' : ''});
+	$('.videoTouchControls').show();
 
 
 	try
@@ -661,16 +666,17 @@ function myVideoPreviousRequest(){
 
     clearInterval(intervalPlaytime);
 
-    var previousVideoTrack = null;
+	//var previousVideoTrack = currentVideoTrack;
+	var previousVideoTrack = recentlyPlayed.pop();
 
-    if (recentlyPlayed.length > 0)
+	while (previousVideoTrack === currentVideoTrack)
     {
-		  previousVideoTrack = recentlyPlayed.pop();
-    }
-
     if (previousVideoTrack === null)
     {
 		previousVideoTrack = currentVideoTrack;
+			break;
+		}
+		previousVideoTrack = recentlyPlayed.pop();
     }
 
     if (!waitingWS)
@@ -1118,8 +1124,6 @@ function handleCommander(eventID)
 
 		default:
 			return "ignored";
-			break;
-
 	}
 	return "consumed";
 }
