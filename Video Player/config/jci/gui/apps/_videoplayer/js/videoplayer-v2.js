@@ -72,8 +72,9 @@ var waitingNext = false;
 var selectedItem = 0;
 var recentlyPlayed = JSON.parse(localStorage.getItem('videoplayer.recentlyplayed')) || [];
 var selectedOptionItem = -1; //6 ??
-var recentlyPlayed = [];
 
+//var logFile = "/tmp/mnt/sd_nav/video-log.txt";
+var logFile = "/jci/gui/apps/_videoplayer/log/videoplayer_log.txt";
 var boxChecked = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)';
 var boxUncheck = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)';
 
@@ -85,21 +86,30 @@ $(document).ready(function(){
 	try
 	{
 		$('#SbSpeedo').fadeOut();
+		/*
+		*  Trick: When opening videoplayer, press the music button right away.  
+		*  While switching contexts the pause command will execute and music will be paused.
+		*  Then switch back to videoplayer and play a video.
+		*  This is a temporary solution untill a better one is discovered.
+		*/
 		framework.sendEventToMmui("common", "Global.Pause");
 	}
 	catch(err)
 	{
 
 	}
-
-	(FullScreen) ? $('#myVideoFullScrBtn').css({'background-image' : boxChecked}) : $('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
-	(Shuffle) ? $('#myVideoShuffleBtn').css({'background-image' : boxChecked}) : $('#myVideoShuffleBtn').css({'background-image' : boxUncheck});
-	(Repeat) ? $('#myVideoRepeatBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatBtn').css({'background-image' : boxUncheck});
-	(RepeatAll) ? $('#myVideoRepeatAllBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatAllBtn').css({'background-image' : boxUncheck});
-
-//	if (window.File && window.FileReader && window.FileList && window.Blob) {
-//		$('#myVideoList').html("step 1");
-//	}
+	setCheckBoxes('#myVideoFullScrBtn', FullScreen);
+	setCheckBoxes('#myVideoShuffleBtn', Shuffle);
+	setCheckBoxes('#myVideoRepeatBtn', Repeat);
+	setCheckBoxes('#myVideoRepeatAllBtn', RepeatAll);
+	function setCheckBoxes(opId, checkIt) {
+		var check = (checkIt) ? boxChecked : boxUncheck;
+		$(opId).css({'background-image': check});
+	}
+	if (JSON.parse(localStorage.getItem('videoplayer.background'))) {$('#myVideoContainer').toggleClass('noBg');}
+	//	if (window.File && window.FileReader && window.FileList && window.Blob) {
+	//		$('#myVideoList').html("step 1");
+	//	}
 	if (enableLog)
 	{
 		myVideoWs('mount -o rw,remount /; hwclock --hctosys; ', false); //enable-write - Change Date
@@ -124,7 +134,7 @@ $(document).ready(function(){
 
 	if (enableLog)
 	{
-		src = src + 'cat /proc/swaps >> /jci/gui/apps/_videoplayer/log/videoplayer_log.txt; ';
+		src = src + 'cat /proc/swaps >> '+ logFile +'; ';
 	}
 
 	myVideoWs(src, false); //start-swap
@@ -168,7 +178,7 @@ $(document).ready(function(){
 		myVideoPausePlayRequest();
 	});
 
-		/* FullScreen playback
+	/* FullScreen playback
 	==================================================================================*/
 	$('#myVideoFullScrBtn').click(function(){
 		writeLog("myVideoFullScrBtn Clicked");
@@ -245,6 +255,7 @@ $(document).ready(function(){
 			$('#myVideoRepeatBtn').css({'background-image' : boxChecked});
 		}
 		recentlyPlayed = [];
+		writeLog("recentlyPlayed Reset");
 		localStorage.setItem('videoplayer.repeat', JSON.stringify(Repeat));
 	});
 
@@ -260,6 +271,7 @@ $(document).ready(function(){
 			$('#myVideoRepeatAllBtn').css({'background-image' : boxChecked});
 		}
 		recentlyPlayed = [];
+		writeLog("recentlyPlayed Reset");
 		localStorage.setItem('videoplayer.repeatall', JSON.stringify(RepeatAll));
 	});
 
@@ -272,6 +284,7 @@ $(document).ready(function(){
 			Shuffle = false;
 			$('#myVideoShuffleBtn').css({'background-image' : boxUncheck});
 			recentlyPlayed = [];
+			writeLog("recentlyPlayed Reset");
 		}
 		else
 		{
@@ -285,7 +298,8 @@ $(document).ready(function(){
 	==================================================================================*/
 	$('#toggleBgBtn').click(function(){
 		$('#myVideoContainer').toggleClass('noBg');
-	})
+		localStorage.setItem('videoplayer.background', JSON.stringify($('#myVideoContainer').hasClass('noBg')));
+	});
 
 	setTimeout(function () {
 		//writeLog("setTimeout started");
@@ -293,34 +307,34 @@ $(document).ready(function(){
 
 		/* if (recentlyPlayed.length > 0)
 		{
-			selectedItem = recentlyPlayed[recentlyPlayed.length -1];
-			selectedItem++;
-			currentVideoListContainer = Math.floor(selectedItem / 8);
-			handleCommander("ccw");
-		} */
-	}, 500);
+		selectedItem = recentlyPlayed[recentlyPlayed.length -1];
+		selectedItem++;
+		currentVideoListContainer = Math.floor(selectedItem / 8);
+		handleCommander("ccw");
+	} */
+}, 500);
 
 
-	//try to close the video if the videoplayer is not the current app
-	intervalVideoPlayer = setInterval(function () {
-		//writeLog("setInterval intervalVideoPlayer - " + framework.getCurrentApp());
+//try to close the video if the videoplayer is not the current app
+intervalVideoPlayer = setInterval(function () {
+	//writeLog("setInterval intervalVideoPlayer - " + framework.getCurrentApp());
 
-		if ((!waitingForClose) && (framework.getCurrentApp() !== '_videoplayer'))
+	if ((!waitingForClose) && (framework.getCurrentApp() !== '_videoplayer'))
+	{
+		clearInterval(intervalPlaytime);
+		clearInterval(intervalVideoPlayer);
+
+		writeLog("Closing App - New App: " + framework.getCurrentApp());
+		waitingForClose = true;
+		myVideoStopRequest();
+
+		if (enableLog === true)
 		{
-			clearInterval(intervalPlaytime);
-			clearInterval(intervalVideoPlayer);
-
-			writeLog("Closing App - New App: " + framework.getCurrentApp());
-			waitingForClose = true;
-			myVideoStopRequest();
-
-			if (enableLog === true)
-			{
-				myVideoWs('mount -o ro,remount /', false); //disable-write
-			}
-
+			myVideoWs('mount -o ro,remount /', false); //disable-write
 		}
-	}, 1);//some performance issues ??
+
+	}
+}, 1);//some performance issues ??
 });
 
 
@@ -358,12 +372,12 @@ function myVideoListRequest(){
 
 		if (enableLog)
 		{
-			src = src + 'echo "====retrieve list start====" >> /jci/gui/apps/_videoplayer/log/videoplayer_log.txt; ';
+			src = src + 'echo "====retrieve list start====" >> '+logFile+'; ';
 		}
 
 		src = 'MNTFOLDER=\'' + folderPath + '\'; ';
-				src = src + 'FILES=$(ls -d -1 $MNTFOLDER/sd*/Movies/** | egrep ".avi|.mp4|.wmv|.flv"); ';
-				src = src + 'FILES=$(echo "$FILES" | tr \'\n\' \'|\'); ';
+		src = src + 'FILES=$(ls -d -1 $MNTFOLDER/sd*/Movies/** | egrep ".avi|.mp4|.wmv|.flv"); ';
+		src = src + 'FILES=$(echo "$FILES" | tr \'\n\' \'|\'); ';
 
 
 		src = src + 'echo playback-list#"${FILES}"';
@@ -373,7 +387,6 @@ function myVideoListRequest(){
 	}
 
 }
-
 
 function myVideoListResponse(data){
 	writeLog("myVideoListResponse called");
@@ -397,46 +410,41 @@ function myVideoListResponse(data){
 		writeLog("myVideoList insert data --- " + data);
 
 		videoList.append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
-				.addClass("videoListContainer")
-				);
-		videoListUl = $("#ul" + totalVideoListContainer);
+		.addClass("videoListContainer"));
+	videoListUl = $("#ul" + totalVideoListContainer);
 
-		videos.forEach(function(item, index){
+	videos.forEach(function(item, index){
 
-			if ((index > 0 ) && (index) % 8 === 0)
-			{
-				totalVideoListContainer++;
-				videoList.append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
-						.addClass("videoListContainer")
-						);
-				videoListUl = $("#ul"+totalVideoListContainer);
-
-			}
-
-			var videoName = item.replace(folderPath, '');
-			videoName = videoName.substring(videoName.search(/\/movies\//i) + 8);
-
-			videoListUl.append($('<li></li>')
-				.attr({
-					'video-name': videoName,
-					'video-data': item
-				})
-				.addClass('videoTrack')
-				.html(index + 1 + ". " + videoName.replace(/  /g, " &nbsp;"))
-
-			);
-
-		});
-
-		totalVideos = videos.length;
-		selectedItem=1;
-		handleCommander("ccw");
-
-		if(totalVideoListContainer > 1)
+		if ((index > 0 ) && (index) % 8 === 0)
 		{
-			$('#myVideoScrollDown').css({'visibility' : 'visible'});
-		}
+			totalVideoListContainer++;
+			videoList.append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
+				.addClass("videoListContainer"));
+		videoListUl = $("#ul"+totalVideoListContainer);
+
 	}
+	var videoName = item.replace(folderPath, '');
+	videoName = videoName.substring(videoName.search(/\/movies\//i) + 8);
+
+	videoListUl.append($('<li></li>')
+	.attr({
+		'video-name': videoName,
+		'video-data': item
+	})
+	.addClass('videoTrack')
+			.html(index + 1 + ". " + videoName.replace(/  /g, " &nbsp;")));
+
+});
+
+totalVideos = videos.length;
+selectedItem=1;
+handleCommander("ccw");
+
+if(totalVideoListContainer > 1)
+{
+	$('#myVideoScrollDown').css({'visibility' : 'visible'});
+}
+}
 }
 
 
@@ -467,7 +475,7 @@ function myVideoListScrollUpDown(action){
 	$('.videoListContainer').each(function(index){
 		$(this).css({'display' : 'none'});
 	});
-
+	$('#toggleBgBtn').css({'visibility' : 'visible'});
 	$(".videoListContainer:eq(" + currentVideoListContainer + ")").css("display", "");
 
 }
@@ -507,12 +515,12 @@ function myVideoStartRequest(obj){
 	$('#toggleBgBtn').css({'visibility' : 'hidden'});
 
 
-    $('#myVideoShuffleBtn').css({'display' : 'none'});
-    $('#myVideoMovieBtn').css({'display' : 'none'});
-    $('#myVideoFullScrBtn').css({'display' : 'none'});
-    $('#myVideoRepeatBtn').css({'display' : 'none'});
-    $('#myVideoRepeatAllBtn').css({'display' : 'none'});
-    $('.rebootBtnDiv').css({'display' : 'none'});
+	$('#myVideoShuffleBtn').css({'display' : 'none'});
+	$('#myVideoMovieBtn').css({'display' : 'none'});
+	$('#myVideoFullScrBtn').css({'display' : 'none'});
+	$('#myVideoRepeatBtn').css({'display' : 'none'});
+	$('#myVideoRepeatAllBtn').css({'display' : 'none'});
+	$('.rebootBtnDiv').css({'display' : 'none'});
 
 	$('#myVideoPreviousBtn').css({'display' : ''});
 	$('#myVideoRW').css({'display' : ''});
@@ -541,14 +549,14 @@ function myVideoStartRequest(obj){
 
 		if (!FullScreen)
 		{
-				src = src + ' disp-width=700 disp-height=367 axis-left=50 axis-top=64';
+			src = src + ' disp-width=700 disp-height=367 axis-left=50 axis-top=64';
 		}
 
 		src = src + '" --audio-sink=alsasink "' + videoToPlay + '" 2>&1 ';
 
 		if (enableLog)
 		{
-				src = src + "| tee -a /jci/gui/apps/_videoplayer/log/videoplayer_log.txt;";
+			src = src + "| tee -a "+ logFile +"; ";
 		}
 
 
@@ -576,7 +584,7 @@ function myVideoStartRequest(obj){
 	}
 	catch(err)
 	{
-			writeLog("Error: " + err);
+		writeLog("Error: " + err);
 	}
 
 }
@@ -598,7 +606,7 @@ function myVideoNextRequest(){
 
 		var nextVideoTrack=0;
 
-//		previousVideoTrack = currentVideoTrack;
+		//		previousVideoTrack = currentVideoTrack;
 
 		if (currentVideoTrack)
 		{
@@ -620,7 +628,7 @@ function myVideoNextRequest(){
 					recentlyPlayed = [];
 				}
 			}
-				localStorage.setItem('videoplayer.recentlyplayed', JSON.stringify(recentlyPlayed));
+
 			if (Shuffle)
 			{
 				while (recentlyPlayed.indexOf(nextVideoTrack) !== -1 || nextVideoTrack === currentVideoTrack)
@@ -638,7 +646,7 @@ function myVideoNextRequest(){
 			}
 		}
 
-		localStorage.setItem('videoplayer.recentlyPlayed', JSON.stringify(recentlyPlayed));
+		localStorage.setItem('videoplayer.recentlyplayed', JSON.stringify(recentlyPlayed));
 
 		writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
 
@@ -664,28 +672,28 @@ function myVideoNextRequest(){
 /* playback previous track request
 ==========================================================================================================*/
 function myVideoPreviousRequest(){
-    writeLog("myVideoPreviousRequest called");
+	writeLog("myVideoPreviousRequest called");
 
-    $('#myVideoName').html('');
-    $('#myVideoStatus').html('');
+	$('#myVideoName').html('');
+	$('#myVideoStatus').html('');
 
-    clearInterval(intervalPlaytime);
+	clearInterval(intervalPlaytime);
 
 	//var previousVideoTrack = currentVideoTrack;
 	var previousVideoTrack = recentlyPlayed.pop();
 
 	while (previousVideoTrack === currentVideoTrack)
-    {
-    if (previousVideoTrack === null)
-    {
-		previousVideoTrack = currentVideoTrack;
+	{
+		if (previousVideoTrack === null)
+		{
+			previousVideoTrack = currentVideoTrack;
 			break;
 		}
 		previousVideoTrack = recentlyPlayed.pop();
-    }
+	}
 
-    if (!waitingWS)
-    {
+	if (!waitingWS)
+	{
 		waitingWS = true;
 
 		wsVideo.send('x');
@@ -697,7 +705,7 @@ function myVideoPreviousRequest(){
 		myVideoStartRequest(previousVideoObject);
 
 		waitingWS = false;
-    }
+	}
 }
 
 
@@ -730,14 +738,14 @@ function myVideoStopRequest(){
 	$('#videoPlayBtn').css({'background-image' : ''});
 
 	$('#myVideoShuffleBtn').css({'display' : ''});
-    $('#myVideoMovieBtn').css({'display' : ''});
-    $('#myVideoFullScrBtn').css({'display' : ''});
-    $('#myVideoRepeatBtn').css({'display' : ''});
-    $('#myVideoRepeatAllBtn').css({'display' : ''});
-    $('.rebootBtnDiv').css({'display' : ''});
-	$('#videoPlayControl').hide();
+	$('#myVideoMovieBtn').css({'display' : ''});
+	$('#myVideoFullScrBtn').css({'display' : ''});
+	$('#myVideoRepeatBtn').css({'display' : ''});
+	$('#myVideoRepeatAllBtn').css({'display' : ''});
+	$('.rebootBtnDiv').css({'display' : ''});
+
 	$('#toggleBgBtn').css({'visibility' : 'visible'});
-	
+
 	$('#myVideoList').css({'visibility' : 'visible'});
 	myVideoListScrollUpDown('other');
 
@@ -784,15 +792,18 @@ function myVideoFFRequest(){
 		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 11 < TotalVideoTime)
 		{
 			CurrentVideoPlayTime = CurrentVideoPlayTime + 10;
+		}
+		else
+		{
+			CurrentVideoPlayTime = TotalVideoTime - 2;
+		}
 			wsVideo.send('e');
 			wsVideo.send('1');
 			wsVideo.send('t' + CurrentVideoPlayTime);
-		}
 
 		waitingWS = false;
 	}
 }
-
 
 /* RW playback request / response
 ==========================================================================================================*/
@@ -851,7 +862,7 @@ function writeLog(logText){
 	{
 		var dt = new Date();
 		myVideoWs('echo "' + dt.toISOString() + '; ' + logText.replace('"', '\"').replace("$", "\\$").replace(">", "\>").replace("<", "\<") +
-			'" >> /jci/gui/apps/_videoplayer/log/videoplayer_log.txt', false); //write_log
+		'" >> ' + logFile, false); //write_log
 	}
 }
 
@@ -862,24 +873,24 @@ function checkStatus(state)
 {
 	var res = state.trim();
 
-			if (res.indexOf("Duration")> -1)
-			{
-				//res = res[3].substring(0,res[3].indexOf("]"));
-				//res = res.split("/");
-				CurrentVideoPlayTime = -1;
-				res = res.substring(res.indexOf(":") + 2);
-				res = res.split(":");
-				res = Number(res[0]*3600) + Number(res[1]*60) + Number(res[2].substring(0,2));
+	if (res.indexOf("Duration")> -1)
+	{
+		//res = res[3].substring(0,res[3].indexOf("]"));
+		//res = res.split("/");
+		CurrentVideoPlayTime = -1;
+		res = res.substring(res.indexOf(":") + 2);
+		res = res.split(":");
+		res = Number(res[0]*3600) + Number(res[1]*60) + Number(res[2].substring(0,2));
 
-				TotalVideoTime = res;
-				CurrentVideoPlayTime = -1;
+		TotalVideoTime = res;
+		CurrentVideoPlayTime = -1;
 
-			}
+	}
 
-			if (res.indexOf("ERR]" > -1))
-			{
-				$('#myVideoStatus').html("Memory Error. Please Restart CMU - " + res);
-			}
+	if (res.indexOf("ERR]" > -1))
+	{
+		$('#myVideoStatus').html("Memory Error. Please Restart CMU - " + res);
+	}
 }
 
 
@@ -939,75 +950,71 @@ function handleCommander(eventID)
 	switch(eventID) {
 
 		case "down":
-			if (currentVideoTrack === null)
+		if (currentVideoTrack === null)
+		{
+			if((currentVideoListContainer + 1) < totalVideoListContainer)
 			{
-				if((currentVideoListContainer + 1) < totalVideoListContainer)
-				{
-					$('#myVideoScrollDown').click();
-
-					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-					selectedItem += 8;
-
-					if (selectedItem >= totalVideos)
-					{
-						selectedItem = totalVideos - 1;
-					}
-
-					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
-				}
-				else if ((currentVideoListContainer + 1) === totalVideoListContainer)
-				{
-					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-					selectedItem = totalVideos - 1;
-					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
-				}
-			}
-			else
-			{
-				$('#myVideoStopBtn').click();
-			}
-			break;
-
-		case "up":
-			if (currentVideoTrack === null)
-			{
-				if (currentVideoListContainer > 0)
-				{
-					$('#myVideoScrollUp').click();
-
-					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-					selectedItem -= 8;
-					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
-				}
-				else if (currentVideoListContainer === 0)
-				{
-					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-					selectedItem = 0;
-					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
-				}
-			}
-			else
-			{
-				fullScreenRequest();
-			}
-			break;
-
-		case "ccw":
-			if (currentVideoTrack !== null)
-			{
-				$('#myVideoRW').click();
-			}
-			else
-			{
-				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
-				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
-				return val.substring(val.indexOf("url("));});
+				$('#myVideoScrollDown').click();
 
 				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+				selectedItem += 8;
 
-				selectedItem--;
+				if (selectedItem >= totalVideos)
+				{
+					selectedItem = totalVideos - 1;
+				}
 
-				if (selectedItem < 0)
+				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+			}
+			else if ((currentVideoListContainer + 1) === totalVideoListContainer)
+			{
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+				selectedItem = totalVideos - 1;
+				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+			}
+		}
+		else
+		{
+			$('#myVideoStopBtn').click();
+		}
+		break;
+
+		case "up":
+		if (currentVideoTrack === null)
+		{
+			if (currentVideoListContainer > 0)
+			{
+				$('#myVideoScrollUp').click();
+
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+				selectedItem -= 8;
+				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+			}
+			else if (currentVideoListContainer === 0)
+			{
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+				selectedItem = 0;
+				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+			}
+		}
+		else
+		{
+			fullScreenRequest();
+		}
+		break;
+
+		case "ccw":
+		if (currentVideoTrack !== null)
+		{
+			$('#myVideoRW').click();
+		}
+		else
+		{
+			$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+			$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+				return val.substring(val.indexOf("url("));});
+
+				if (selectedItem >= 0)
 				{
 					selectedItem = 0;
 				}
@@ -1018,16 +1025,17 @@ function handleCommander(eventID)
 				{
 					$('#myVideoScrollUp').click();
 				}
-			else //if (selectedItem <= 0)
-			{
-				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-				selectedItem = totalVideos;
-				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
-			}
+				else //if (selectedItem < 0)
+				{
+					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+					selectedItem = totalVideos - 1;
+					currentVideoListContainer = totalVideoListContainer - 1;
+					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+				}
 			}
 			break;
 
-		case "cw":
+			case "cw":
 			if (currentVideoTrack !== null)
 			{
 				$('#myVideoFF').click();
@@ -1036,139 +1044,135 @@ function handleCommander(eventID)
 			{
 				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
 				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
-				return val.substring(val.indexOf("url("));});
+					return val.substring(val.indexOf("url("));});
 
-				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-
-				selectedItem++;
-
-				if (selectedItem === totalVideos)
-				{
-					selectedItem = totalVideos - 1;
-				}
-
-				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
-
-				if ((selectedItem > 0) && ((selectedItem % 8) === 0))
-				{
-					$('#myVideoScrollDown').click();
-				}
-			else //if (selectedItem >= totalVideos)
-			{
-				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-				selectedItem = 1;
-				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
-			}
-			}
-			break;
-
-		case "left":
-			if (currentVideoTrack !== null)
-			{
-				$('#myVideoPreviousBtn').click();
-			}
-			else
-			{
-				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-
-				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
-				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
-				return val.substring(val.indexOf("url("));});
-
-				selectedOptionItem++;
-
-				if (selectedOptionItem > 4) //10
-				{
-					selectedOptionItem = 4;
-				}
-
-				$(".playbackOption").eq(selectedOptionItem).addClass("selectedItem");
-				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
-				return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
-			}
-			break;
-
-		case "select":
-			if (currentVideoTrack !== null)
-			{
-				$('#myVideoPausePlayBtn').click();
-			}
-			else
-			{
-				if ($(".videoTrack").eq(selectedItem).hasClass("selectedItem"))
+				if (selectedItem < totalVideos)
 					{
-						myVideoStartRequest($(".videoTrack").eq(selectedItem));
+						$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+						selectedItem++;
+						$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+
+						if ((selectedItem > 0) && ((selectedItem % 8) === 0))
+						{
+							$('#myVideoScrollDown').click();
+						}
 					}
-				else
+					else //if (selectedItem >= totalVideos)
 					{
-						$('.playbackOption').eq(selectedOptionItem).click();
+						$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+						selectedItem = 0;
+				currentVideoListContainer = 1;
+						$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+					}
+				}
+				break;
+
+				case "left":
+				if (currentVideoTrack !== null)
+				{
+					$('#myVideoPreviousBtn').click();
+				}
+				else
+				{
+					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+
+					$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+					$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+						return val.substring(val.indexOf("url("));});
+
+						selectedOptionItem++;
+
+						if (selectedOptionItem > 4) //10
+						{
+							selectedOptionItem = 4;
+						}
+
+						$(".playbackOption").eq(selectedOptionItem).addClass("selectedItem");
 						$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
 							return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
-					}
-			}
-			break;
+						}
+						break;
 
-		case "right":
-			if (currentVideoTrack !== null)
-			{
-				$('#myVideoNextBtn').click();
-			}
-			else
-			{
-				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+						case "select":
+						if (currentVideoTrack !== null)
+						{
+							$('#myVideoPausePlayBtn').click();
+						}
+						else
+						{
+							if ($(".videoTrack").eq(selectedItem).hasClass("selectedItem"))
+							{
+								myVideoStartRequest($(".videoTrack").eq(selectedItem));
+							}
+							else
+							{
+								$('.playbackOption').eq(selectedOptionItem).click();
+								$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+									return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
+								}
+							}
+							break;
 
-				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
-				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
-				return val.substring(val.indexOf("url("));});
+							case "right":
+							if (currentVideoTrack !== null)
+							{
+								$('#myVideoNextBtn').click();
+							}
+							else
+							{
+								$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
 
-				selectedOptionItem--;
+								$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
+								$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+									return val.substring(val.indexOf("url("));});
 
-				if (selectedOptionItem < 0) //6
-				{
-					selectedOptionItem = 0;
-				}
+									selectedOptionItem--;
 
-				$(".playbackOption").eq(selectedOptionItem).addClass("selectedItem");
-				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
-				return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
+									if (selectedOptionItem < 0) //6
+									{
+										selectedOptionItem = 0;
+									}
 
-			}
-			break;
+									$(".playbackOption").eq(selectedOptionItem).addClass("selectedItem");
+									$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
+										return "-o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1)), " + val;});
 
-		default:
-			return "ignored";
-	}
-	return "consumed";
-}
+									}
+									break;
 
+									default:
+									return "ignored";
+								}
+								return "consumed";
+							}
 
-/* websocket
-============================================================================================= */
-function myVideoWs(action, waitMessage){
+							/* websocket
+							============================================================================================= */
+							function myVideoWs(action, waitMessage){
 
-	var ws = new WebSocket('ws://127.0.0.1:9998/');
+								var ws = new WebSocket('ws://127.0.0.1:9998/');
 
-	ws.onmessage = function(event){
-		var res = event.data.split('#');
+								ws.onmessage = function(event){
+									var res = event.data.split('#');
 
-		ws.close();
-		ws=null;
+									ws.close();
+									ws=null;
 
-		switch(res[0]){
-			case 'playback-list':	myVideoListResponse(res[1]);
-			break;
-		}
+									switch(res[0]){
+										case 'playback-list':	myVideoListResponse(res[1]);
+										break;
+									}
 
-	};
+								};
 
-	ws.onopen = function(){
-		ws.send(action);
-		if (!waitMessage)
-		{
-			ws.close();
-			ws=null;
-		}
-	};
-}
-// #############################################################################################
-// End of Video Player
+								ws.onopen = function(){
+									ws.send(action);
+									if (!waitMessage)
+									{
+										ws.close();
+										ws=null;
+									}
+								};
+							}
+							// #############################################################################################
+							// End of Video Player
