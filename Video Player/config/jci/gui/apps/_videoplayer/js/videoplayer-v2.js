@@ -61,7 +61,7 @@ var CurrentVideoPlayTime = -5; //The gplay delays ~5s to start
 var TotalVideoTime = null;
 var intervalPlaytime;
 var waitingNext = false;
-var selectedItem = 0; 
+var selectedItem = 0;
 var selectedOptionItem = -1; //6 ??
 //var previousVideoTrack = null; //changed to local variable
 //var recentlyPlayed = JSON.parse(localStorage.getItem('videoplayer.recentlyPlayed')) || [];
@@ -84,12 +84,12 @@ $(document).ready(function(){
 	{
 
 	}
-	
+
 	(FullScreen) ? $('#myVideoFullScrBtn').css({'background-image' : boxChecked}) : $('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
 	(Shuffle) ? $('#myVideoShuffleBtn').css({'background-image' : boxChecked}) : $('#myVideoShuffleBtn').css({'background-image' : boxUncheck});
 	(Repeat) ? $('#myVideoRepeatBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatBtn').css({'background-image' : boxUncheck});
 	(RepeatAll) ? $('#myVideoRepeatAllBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatAllBtn').css({'background-image' : boxUncheck});
-	
+
 //	if (window.File && window.FileReader && window.FileList && window.Blob) {
 //		$('#myVideoList').html("step 1");
 //	}
@@ -239,7 +239,7 @@ $(document).ready(function(){
 		}
 		recentlyPlayed = [];
 		localStorage.setItem('videoplayer.repeat', JSON.stringify(Repeat));
-	}); 
+	});
 
 	/* repeat all option (loop entire video list)
 	==================================================================================*/
@@ -277,7 +277,7 @@ $(document).ready(function(){
 	setTimeout(function () {
 		//writeLog("setTimeout started");
 		myVideoListRequest();
-		
+
 		/* if (recentlyPlayed.length > 0)
 		{
 			selectedItem = recentlyPlayed[recentlyPlayed.length -1];
@@ -580,7 +580,7 @@ function myVideoNextRequest(){
 
 //		previousVideoTrack = currentVideoTrack;
 
-		if (currentVideoTrack) 
+		if (currentVideoTrack)
 		{
 			nextVideoTrack = currentVideoTrack;
 		}
@@ -590,10 +590,10 @@ function myVideoNextRequest(){
 			{
 				recentlyPlayed.push(currentVideoTrack);
 			}
-		 
-			if (recentlyPlayed.length >= totalVideos) 
+
+			if (recentlyPlayed.length >= totalVideos)
 			{
-				if (!RepeatAll) 
+				if (!RepeatAll)
 				{
 					myVideoStopRequest();
 					waitingWS = false;
@@ -615,13 +615,13 @@ function myVideoNextRequest(){
 			else
 			{
 				nextVideoTrack++;
-				if (nextVideoTrack >= totalVideos) 
+				if (nextVideoTrack >= totalVideos)
 				{
 					nextVideoTrack=0;
 				}
 			}
 		}
-		
+
 		localStorage.setItem('videoplayer.recentlyPlayed', JSON.stringify(recentlyPlayed));
 
 		writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
@@ -661,7 +661,7 @@ function myVideoPreviousRequest(){
     {
         previousVideoTrack = recentlyPlayed.pop();
     }
-	
+
 	localStorage.setItem('videoplayer.recentlyPlayed', JSON.stringify(recentlyPlayed));
 
     if (previousVideoTrack === null)
@@ -859,10 +859,9 @@ function checkStatus(state)
 
 			}
 
-
-			if (res.indexOf("ERR]   mem allocation failed!") > -1)
+			if (res.indexOf("ERR]" > -1))
 			{
-				$('#myVideoStatus').html("Memory Error. Please Restart CMU");
+				$('#myVideoStatus').html("Memory Error. Please Restart CMU - " + res);
 			}
 }
 
@@ -987,17 +986,20 @@ function handleCommander(eventID)
 				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
 				return val.substring(val.indexOf("url("));});
 
-				if (selectedItem > 0)
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+
+				selectedItem--;
+
+				if (selectedItem < 0)
 				{
-					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+					selectedItem = 0;
+				}
 
-					if ((selectedItem % 8) === 0)
-					{
-						$('#myVideoScrollUp').click();
-					}
+				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
 
-					selectedItem--;
-					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+				if ((selectedItem > 0) && (((selectedItem + 1) % 8) === 0))
+				{
+					$('#myVideoScrollUp').click();
 				}
 			}
 			break;
@@ -1013,16 +1015,20 @@ function handleCommander(eventID)
 				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
 				return val.substring(val.indexOf("url("));});
 
-				if (selectedItem + 1 < totalVideos)
-				{
-					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-					selectedItem++;
-					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
 
-					if ((selectedItem > 0) && ((selectedItem % 8) === 0))
-					{
-						$('#myVideoScrollDown').click();
-					}
+				selectedItem++;
+
+				if (selectedItem === totalVideos)
+				{
+					selectedItem = totalVideos - 1;
+				}
+
+				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+
+				if ((selectedItem > 0) && ((selectedItem % 8) === 0))
+				{
+					$('#myVideoScrollDown').click();
 				}
 			}
 			break;
@@ -1039,7 +1045,7 @@ function handleCommander(eventID)
 				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
 				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
 				return val.substring(val.indexOf("url("));});
-				
+
 				selectedOptionItem++;
 
 				if (selectedOptionItem > 4) //10
