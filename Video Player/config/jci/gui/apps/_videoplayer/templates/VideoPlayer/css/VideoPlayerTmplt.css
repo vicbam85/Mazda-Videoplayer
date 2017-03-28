@@ -143,6 +143,9 @@
     padding:0;
     list-style-type: none;
 }
+#videoPlayControl ul li{ 
+    float:left; 
+}
 #videoShuffleBtn {
   top: 0;
   right: 30%;
@@ -210,7 +213,6 @@
   background-repeat: no-repeat;
   background-color: transparent;
   background-image: none;
-  float: none;
 }
 .videoTouchControls:hover,.videoTouchControls:focus,.videoTouchControls:active{background-color:#000;}/*FOR TEST-ICLES*/
 .selectedItem {
@@ -219,88 +221,4 @@
 }
 .playbackOption.selectedItem {
   text-shadow: 0 0 5px #fff;
-}
-/* csslint ignore:end */
-#controls{
-  width: 800px;
-  height: 480px;
-  margin: auto;
-  position: relative;
-  background: #000;
-}
-
-li {
-  list-style: none;
-  position: absolute;
-  cursor:pointer!important;
-}
-#videoShuffleBtn {
-  width: 25%;
-  height: 20%;
-  top: 0%;
-  right: 30%;
-  left: 0;
-  margin: auto;
-}
-#videoReAllBtn {
-  width: 25%;
-  height: 20%;
-  top: 0%;
-  right: 0%;
-  left: 30%;
-  margin: auto;
-}
-
-#videoStopBtn {
-  width: 50%;
-  height: 20%;
-  top: 80%;
-  right: 0%;
-  left: 0%;
-  margin: auto;
-}
-
-#videoPlayBtn {
-  left: 60px;
-  right: 60px;
-  top: 60px;
-  bottom: 60px;
-  height: 50%;
-  width: 50%;
-  background-position: center;
-  background-repeat: no-repeat;
-  margin: auto;
-  z-index: 20200;
-}
-#videoNextBtn {
-  width: 20%;
-  height: 220px;
-  top: 0;
-  left: 80%;
-}
-#videoPlayFFBtn {
-  width: 20%;
-  height: 47%;
-  top: 52%;
-  left: 80%;
-}
-
-#videoPlayRWBtn {
-  width: 20%;
-  height: 47%;
-  top: 52%;
-  left: 0;
-}
-#videoPrevBtn {
-  width: 20%;
-  height: 45%;
-  top: 0;
-  left: 0;
-}
-.selectedItem {
-	background: -o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1));  /*Opera 11.1-12*/
-    background: linear-gradient(to top, rgba(255,0,0,0), rgba(255,0,0,1));
-}
-.playbackOption.selectedItem {
-    text-shadow: 0px 0px 5px #fff;
 }

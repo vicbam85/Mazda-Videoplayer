@@ -280,6 +280,12 @@ $(document).ready(function(){
 		}
 		localStorage.setItem('videoplayer.shuffle', JSON.stringify(Shuffle));
 	});
+	
+	/* Toggle Background Button
+	==================================================================================*/
+	$('#toggleBgBtn').click(function(){
+		$('#myVideoContainer').toggleClass('noBg');
+	})
 
 	setTimeout(function () {
 		//writeLog("setTimeout started");
@@ -343,6 +349,7 @@ function myVideoListRequest(){
 		currentVideoListContainer = 0;
 		$('#myVideoScrollUp').css({'visibility' : 'hidden'});
 		$('#myVideoScrollDown').css({'visibility' : 'hidden'});
+		$('#toggleBgBtn').css({'visibility' : 'hidden'});
 		$('#myVideoList').html("<img id='ajaxLoader' src='apps/_videoplayer/templates/VideoPlayer/images/ajax-loader.gif'>");
 
 
@@ -497,6 +504,7 @@ function myVideoStartRequest(obj){
 	$('#myVideoList').css({'visibility' : 'hidden'});
 	$('#myVideoScrollDown').css({'visibility' : 'hidden'});
 	$('#myVideoScrollUp').css({'visibility' : 'hidden'});
+	$('#toggleBgBtn').css({'visibility' : 'hidden'});
 
 
     $('#myVideoShuffleBtn').css({'display' : 'none'});
@@ -514,9 +522,9 @@ function myVideoStartRequest(obj){
 	$('#myVideoStopBtn').css({'display' : ''});
 	$('#myVideoName').html(obj.attr('video-name').replace(/ /g, "&nbsp;"));
 
+	//$('.videoTouchControls').show();
 	//$('#videoPlayControl').css({'display' : 'block'});
-	$('.videoTouchControls').show();
-
+	$('#videoPlayControl').show()
 
 	try
 	{
@@ -727,7 +735,9 @@ function myVideoStopRequest(){
     $('#myVideoRepeatBtn').css({'display' : ''});
     $('#myVideoRepeatAllBtn').css({'display' : ''});
     $('.rebootBtnDiv').css({'display' : ''});
-
+	$('#videoPlayControl').hide();
+	$('#toggleBgBtn').css({'visibility' : 'visible'});
+	
 	$('#myVideoList').css({'visibility' : 'visible'});
 	myVideoListScrollUpDown('other');
 
