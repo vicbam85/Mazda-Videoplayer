@@ -91,12 +91,12 @@ $(document).ready(function(){
 	{
 
 	}
-	
+
 	(FullScreen) ? $('#myVideoFullScrBtn').css({'background-image' : boxChecked}) : $('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
 	(Shuffle) ? $('#myVideoShuffleBtn').css({'background-image' : boxChecked}) : $('#myVideoShuffleBtn').css({'background-image' : boxUncheck});
 	(Repeat) ? $('#myVideoRepeatBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatBtn').css({'background-image' : boxUncheck});
 	(RepeatAll) ? $('#myVideoRepeatAllBtn').css({'background-image' : boxChecked}) : $('#myVideoRepeatAllBtn').css({'background-image' : boxUncheck});
-	
+
 //	if (window.File && window.FileReader && window.FileList && window.Blob) {
 //		$('#myVideoList').html("step 1");
 //	}
@@ -284,7 +284,7 @@ $(document).ready(function(){
 	setTimeout(function () {
 		//writeLog("setTimeout started");
 		myVideoListRequest();
-		
+
 		/* if (recentlyPlayed.length > 0)
 		{
 			selectedItem = recentlyPlayed[recentlyPlayed.length -1];
@@ -293,11 +293,6 @@ $(document).ready(function(){
 			handleCommander("ccw");
 		} */
 	}, 500);
-/* Toggle Background
-==================================================================================*/
-$('#toggleBgBtn').click(function(){
-	$('#myVideoContainer').toggleClass('noBg');
-});
 
 
 	//try to close the video if the videoplayer is not the current app
@@ -635,6 +630,8 @@ function myVideoNextRequest(){
 			}
 		}
 
+		localStorage.setItem('videoplayer.recentlyPlayed', JSON.stringify(recentlyPlayed));
+
 		writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
 
 		var nextVideoObject = $(".videoTrack:eq(" + nextVideoTrack + ")");
@@ -869,10 +866,9 @@ function checkStatus(state)
 
 			}
 
-
-			if (res.indexOf("ERR]   mem allocation failed!") > -1)
+			if (res.indexOf("ERR]" > -1))
 			{
-				$('#myVideoStatus').html("Memory Error. Please Restart CMU");
+				$('#myVideoStatus').html("Memory Error. Please Restart CMU - " + res);
 			}
 }
 
@@ -997,17 +993,20 @@ function handleCommander(eventID)
 				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
 				return val.substring(val.indexOf("url("));});
 
-				if (selectedItem > 0)
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+
+				selectedItem--;
+
+				if (selectedItem < 0)
 				{
-					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
+					selectedItem = 0;
+				}
 
-					if ((selectedItem % 8) === 0)
-					{
-						$('#myVideoScrollUp').click();
-					}
+				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
 
-					selectedItem--;
-					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+				if ((selectedItem > 0) && (((selectedItem + 1) % 8) === 0))
+				{
+					$('#myVideoScrollUp').click();
 				}
 			else //if (selectedItem <= 0)
 			{
@@ -1029,16 +1028,20 @@ function handleCommander(eventID)
 				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
 				return val.substring(val.indexOf("url("));});
 
-				if (selectedItem + 1 < totalVideos)
-				{
-					$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-					selectedItem++;
-					$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
 
-					if ((selectedItem > 0) && ((selectedItem % 8) === 0))
-					{
-						$('#myVideoScrollDown').click();
-					}
+				selectedItem++;
+
+				if (selectedItem === totalVideos)
+				{
+					selectedItem = totalVideos - 1;
+				}
+
+				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
+
+				if ((selectedItem > 0) && ((selectedItem % 8) === 0))
+				{
+					$('#myVideoScrollDown').click();
 				}
 			else //if (selectedItem >= totalVideos)
 			{
@@ -1061,7 +1064,7 @@ function handleCommander(eventID)
 				$(".playbackOption").eq(selectedOptionItem).removeClass("selectedItem");
 				$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
 				return val.substring(val.indexOf("url("));});
-				
+
 				selectedOptionItem++;
 
 				if (selectedOptionItem > 4) //10
