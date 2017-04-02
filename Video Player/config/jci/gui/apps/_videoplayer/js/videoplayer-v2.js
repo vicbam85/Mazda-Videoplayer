@@ -87,7 +87,7 @@ $(document).ready(function(){
 	{
 		$('#SbSpeedo').fadeOut();
 		/*
-		*  Trick: When opening videoplayer, press the music button right away.  
+		*  Trick: When opening videoplayer, press the music button right away.
 		*  While switching contexts the pause command will execute and music will be paused.
 		*  Then switch back to videoplayer and play a video.
 		*  This is a temporary solution untill a better one is discovered.
@@ -293,7 +293,7 @@ $(document).ready(function(){
 		}
 		localStorage.setItem('videoplayer.shuffle', JSON.stringify(Shuffle));
 	});
-	
+
 	/* Toggle Background Button
 	==================================================================================*/
 	$('#toggleBgBtn').click(function(){
@@ -304,37 +304,36 @@ $(document).ready(function(){
 	setTimeout(function () {
 		//writeLog("setTimeout started");
 		myVideoListRequest();
-
 		/* if (recentlyPlayed.length > 0)
 		{
-		selectedItem = recentlyPlayed[recentlyPlayed.length -1];
-		selectedItem++;
-		currentVideoListContainer = Math.floor(selectedItem / 8);
-		handleCommander("ccw");
-	} */
-}, 500);
+			selectedItem = recentlyPlayed[recentlyPlayed.length -1];
+			selectedItem++;
+			currentVideoListContainer = Math.floor(selectedItem / 8);
+			handleCommander("ccw");
+		} */
+	}, 500);
 
 
-//try to close the video if the videoplayer is not the current app
-intervalVideoPlayer = setInterval(function () {
-	//writeLog("setInterval intervalVideoPlayer - " + framework.getCurrentApp());
+	//try to close the video if the videoplayer is not the current app
+	intervalVideoPlayer = setInterval(function () {
+		//writeLog("setInterval intervalVideoPlayer - " + framework.getCurrentApp());
 
-	if ((!waitingForClose) && (framework.getCurrentApp() !== '_videoplayer'))
-	{
-		clearInterval(intervalPlaytime);
-		clearInterval(intervalVideoPlayer);
-
-		writeLog("Closing App - New App: " + framework.getCurrentApp());
-		waitingForClose = true;
-		myVideoStopRequest();
-
-		if (enableLog === true)
+		if ((!waitingForClose) && (framework.getCurrentApp() !== '_videoplayer'))
 		{
-			myVideoWs('mount -o ro,remount /', false); //disable-write
-		}
+			clearInterval(intervalPlaytime);
+			clearInterval(intervalVideoPlayer);
 
-	}
-}, 1);//some performance issues ??
+			writeLog("Closing App - New App: " + framework.getCurrentApp());
+			waitingForClose = true;
+			myVideoStopRequest();
+
+			if (enableLog === true)
+			{
+				myVideoWs('mount -o ro,remount /', false); //disable-write
+			}
+
+		}
+	}, 1);//some performance issues ??
 });
 
 
@@ -686,12 +685,12 @@ function myVideoPreviousRequest(){
 
 	while (previousVideoTrack === currentVideoTrack)
 	{
+		previousVideoTrack = recentlyPlayed.pop();
 		if (previousVideoTrack === null)
 		{
 			previousVideoTrack = currentVideoTrack;
 			break;
 		}
-		previousVideoTrack = recentlyPlayed.pop();
 	}
 
 	if (!waitingWS)
@@ -797,7 +796,7 @@ function myVideoFFRequest(){
 		}
 		else
 		{
-			CurrentVideoPlayTime = TotalVideoTime - 2;
+			CurrentVideoPlayTime = TotalVideoTime - 1;
 		}
 		wsVideo.send('e');
 		wsVideo.send('1');
