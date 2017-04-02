@@ -62,10 +62,9 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties)
 	'<div id="myVideoStatus" style="font-style:italic"></div></div>'+
 	'<div id="myVideoList"></div>'+
 	'<div id="myVideoScroll">'+
-  '<button id="toggleBgBtn">Background</button>' +
 	'<img src="apps/_videoplayer/templates/VideoPlayer/images/myVideoUpBtn.png" id="myVideoScrollUp" />'+
 	'<img src="apps/_videoplayer/templates/VideoPlayer/images/myVideoDownBtn.png" id="myVideoScrollDown" />'+
-  '<img src="apps/_videoplayer/templates/VideoPlayer/images/bgbtn.png" id="toggleBgBtn" />'+
+	'<img src="apps/_videoplayer/templates/VideoPlayer/images/bgbtn.png" id="toggleBgBtn" />'+
 	'</div>'+
 	'<div id="videoPlayControl">'+
 	'<ul>'+
@@ -80,9 +79,9 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties)
 	'</ul>'+
 	'</div>'+
 	'</div>'+
-	'<script src="addon-common/jquery.min.js" type="text/javascript"></script>';//+
-	//'<script src="apps/_videoplayer/js/videoplayer-v2.js" type="text/javascript"></script>';
-	$.getScript('apps/_videoplayer/js/videoplayer-v2.js');
+	'<script src="addon-common/jquery.min.js" type="text/javascript"></script>'+
+	'<script src="apps/_videoplayer/js/videoplayer-v2.js" type="text/javascript"></script>';
+	//$.getScript('apps/_videoplayer/js/videoplayer-v2.js');
 }
 
 /*
@@ -93,7 +92,7 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties)
 
 /* (internal - called by the framework)
  * Handles multicontroller events.
- * @param   eventID (string) any of the Internal event name� values in IHU_GUI_MulticontrollerSimulation.docx (e.g. 'cw',
+ * @param   eventID (string) any of the Internal event name values in IHU_GUI_MulticontrollerSimulation.docx (e.g. 'cw',
  * 'ccw', 'select')
  */
 VideoPlayerTmplt.prototype.handleControllerEvent = function(eventID)
