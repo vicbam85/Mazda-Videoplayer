@@ -453,30 +453,39 @@ function myVideoListResponse(data){
 function myVideoListScrollUpDown(action){
 	writeLog("myVideoListScrollUpDown called");
 
-	if(action === 'up'){
+	switch(action) {
+		case 'up':
 		currentVideoListContainer--;
-
-	} else if (action === 'down'){
+		break;
+		case 'down':
 		currentVideoListContainer++;
+		break;
+		case 'top':
+		currentVideoListContainer = 0;
+		break;
+		case 'bottom':
+		currentVideoListContainer = totalVideoListContainer -1;
+		break;
 	}
 
 	if(currentVideoListContainer === 0){
 		$('#myVideoScrollUp').css({'visibility' : 'hidden'});
-	} else if(currentVideoListContainer > 0){
+	} else { // if(currentVideoListContainer > 0)
 		$('#myVideoScrollUp').css({'visibility' : 'visible'});
 	}
 
-	if((currentVideoListContainer + 1) === totalVideoListContainer){
+	if(currentVideoListContainer === totalVideoListContainer - 1){
 		$('#myVideoScrollDown').css({'visibility' : 'hidden'});
-	} else if((currentVideoListContainer + 1) < totalVideoListContainer){
+	} else { // if(currentVideoListContainer < totalVideoListContainer - 1)
 		$('#myVideoScrollDown').css({'visibility' : 'visible'});
 	}
 
 	$('.videoListContainer').each(function(index){
 		$(this).css({'display' : 'none'});
 	});
-	$('#toggleBgBtn').css({'visibility' : 'visible'});
+
 	$(".videoListContainer:eq(" + currentVideoListContainer + ")").css("display", "");
+	$('#toggleBgBtn').css({'visibility' : 'visible'});
 
 }
 
@@ -1032,9 +1041,7 @@ function handleCommander(eventID)
 			{
 				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
 				selectedItem = totalVideos - 1;
-				currentVideoListContainer = totalVideoListContainer - 1;
 				myVideoListScrollUpDown('bottom');
-				handleCommander('ccw');
 				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
 			}
 		}
@@ -1051,7 +1058,7 @@ function handleCommander(eventID)
 			$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
 				return val.substring(val.indexOf("url("));});
 
-			if (selectedItem + 1 < totalVideos)
+			if (selectedItem < totalVideos - 1)
 			{
 				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
 				selectedItem++;
@@ -1065,7 +1072,6 @@ function handleCommander(eventID)
 			else //if (selectedItem >= totalVideos)
 			{
 				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
-				currentVideoListContainer = 0;
 				selectedItem = 0;
 				myVideoListScrollUpDown('top');
 				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
