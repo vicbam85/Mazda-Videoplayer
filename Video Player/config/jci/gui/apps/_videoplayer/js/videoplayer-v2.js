@@ -245,7 +245,7 @@ $(document).ready(function(){
 
 	/* repeat option (looping single track)
 	==================================================================================*/
-	$('#myVideoRepeatBtn, #videoShuffleBtn').click(function(){
+	$('#myVideoRepeatBtn').click(function(){
 		writeLog("myVideoRepeatBtn Clicked");
 		if(Repeat){
 			Repeat = false;
@@ -438,6 +438,7 @@ function myVideoListResponse(data){
 		totalVideos = videos.length;
 		selectedItem=1;
 		handleCommander("ccw");
+		$('#toggleBgBtn').css({'visibility' : 'visible'});
 
 		if(totalVideoListContainer > 1)
 		{
@@ -1033,6 +1034,7 @@ function handleCommander(eventID)
 				selectedItem = totalVideos - 1;
 				currentVideoListContainer = totalVideoListContainer - 1;
 				myVideoListScrollUpDown('bottom');
+				handleCommander('ccw');
 				$(".videoTrack").eq(selectedItem).addClass("selectedItem");
 			}
 		}
