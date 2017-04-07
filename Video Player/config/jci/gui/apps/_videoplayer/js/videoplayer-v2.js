@@ -1025,7 +1025,7 @@ function handleCommander(eventID)
 			$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){
 				return val.substring(val.indexOf("url("));});
 
-			if (selectedItem >= 0)
+			if (selectedItem > 0)
 			{
 				$(".videoTrack").eq(selectedItem).removeClass("selectedItem");
 
