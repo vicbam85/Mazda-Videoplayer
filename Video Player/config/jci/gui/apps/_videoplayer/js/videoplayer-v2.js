@@ -900,7 +900,8 @@ function checkStatus(state)
 
 	if (res.indexOf("ERR]") > -1)
 	{
-		$('#myVideoStatus').html("Memory Error. Please Restart CMU - " + res);
+		$('#myVideoList').html('').append($('.rebootBtnDiv').css({'display' : '','height':'32px'}));
+		$('#myVideoControlDiv').css({'font-size':'16px','padding':'2px'}).html("Memory Error. Please Restart CMU - " + res).append($('.rebootBtnDiv'));
 	}
 }
 
