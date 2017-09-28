@@ -162,7 +162,7 @@ fi
 
 #######################################################################
 # Video_Player by many many people
-# V2.1 - Mod by vic_bam85
+# V3.0 - Mod by Trezdog44
 #######################################################################
 
 show_message "Video Player Installation"
