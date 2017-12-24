@@ -31,6 +31,7 @@ _videoplayerApp.prototype.appInit = function()
 {
     log.debug("_videoplayerApp appInit  called...");
 
+
     //Context table
     //@formatter:off
 
@@ -59,6 +60,7 @@ _videoplayerApp.prototype.appInit = function()
 _videoplayerApp.prototype._StartContextReady = function ()
 {
   framework.common.setSbDomainIcon("apps/_videoplayer/templates/VideoPlayer/images/icon.png");
+  framework.transitionsObj._genObj._TEMPLATE_CATEGORIES_TABLE.VideoPlayerTmplt = "Detail with UMP";
 };
 
 /**

@@ -43,7 +43,7 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties)
     // do whatever you want here
                 //var script1 = document.createElement("script");
     this.divElt.innerHTML = '<div id="myVideoContainer">'+
-	'<div id="myVideoControlDiv" class="blueTheme">'+
+	'<div id="myVideoControlDiv">'+
 	'<ul>'+
 	'<li id="myVideoStopBtn" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoStopBtn.png)"></li>'+
 	'<li id="myVideoNextBtn" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoNextBtn.png)"></li>'+
@@ -81,26 +81,41 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties)
 	'</ul>'+
 	'</div>'+
 	'</div>'+
-	'<div id="videoInfoPanel"><span id="myVideoInfoClose">&times;</span>'+
+  '<div id="videoInfoPanel" class="panelOptions">'+
 	'<span id="popInfoTab" class="infoBtn">Options</span>'+
 	'<span id="popOptionsTab" class="infoBtn">Info</span>'+
+  '<span id="myVideoInfoClose"><a>&times;</a></span>'+
 	'<aside id="widget-content">'+
 	'<div id="widgetContent">'+
   '<div id="optionTitle">Video Player Options</div>'+
   '<button id="optionTestError" class="panelOption btn">Test Error Message</button>'+
   '<ul><li id="optionHideUnicodeBtn" class="panelOption"><a>Hide Unicode Button</a></li>' +
   '<li id="optionStatusbarTitle" class="panelOption"><a>Title to Statusbar</a></li>'+
-  '</ul></div>' +
+  '<li id="colorThemes" class="panelOption">'+
+  '<a class="darkred" style="color:red">red</a>'+
+  '<a class="darkblue" style="color:blue">blue</a>'+
+  '<a class="darkgreen" style="color:green">green</a>'+
+  '<a class="darkviolet" style="color:darkviolet">violet</a><br>'+
+  '<a class="darkorange" style="color:orange">orange</a>'+
+  '<a class="teal" style="color:teal">teal</a>'+
+  '<a class="darkslategrey" style="color:darkslategrey">slate</a>'+
+  '<a class="seashell" style="color:seashell">white</a>'+
+  '<!--a class="darkgoldenrod" style="color:darkgoldenrod">gold</a-->'+
+  '</li></ul></div>'+
 	'<div id="widgetContentState">'+
   '<div id="infoTitle">Video Player Information</div>'+
   '<ul><li>Best Video Format: 360p MP4 H264 AAC</li>'+
   '<li>Switch To Unicode Mode To Fix Character Isues</li>'+
-  '<li>To Translate Info, Make Suggestions, Or Add Functionality</li>'+
-  '<li>Visit https://github.com/Trevelopment/Mazda-Videoplayer</li>'+
+  '<li>For Hackers:</li>'+
+  '<li>https://github.com/Trevelopment/Mazda-Videoplayer</li>'+
 	'</ul></div></aside></div>'+
-	'<script src="addon-common/jquery.min.js" type="text/javascript"></script>'+
-	'<script src="apps/_videoplayer/js/videoplayer-v2.js" type="text/javascript"></script>';
-	//$.getScript('apps/_videoplayer/js/videoplayer-v2.js');
+  '<script src="addon-common/jquery.min.js" type="text/javascript"></script>'+
+  '<script src="apps/_videoplayer/js/videoplayer-v2.js" type="text/javascript"></script>';
+  /*if (!window.jQuery) {
+    utility.loadScript("addon-common/jquery.min.js", {}, function(){
+      $.getScript("apps/_videoplayer/js/videoplayer-v2.js");
+    });
+  }*/
 }
 
 /*
@@ -154,6 +169,7 @@ VideoPlayerTmplt.prototype.cleanUp = function()
 
 	this.divElt=null;
 	child=null;
+  $('#SbSpeedo').fadeIn();
 };
 
 framework.registerTmpltLoaded("VideoPlayerTmplt");

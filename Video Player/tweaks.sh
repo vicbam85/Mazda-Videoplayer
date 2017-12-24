@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# some usefull things (thanks to oz_paulb from mazda3revolution.com - your code is awesome! I wish, I could understand everything ...)
+# Video Player v3.2 installer
 
 get_cmu_sw_version()
 {
@@ -231,7 +231,22 @@ chmod 755 -R /jci/gui/apps/_videoplayer/
 
 log_message "=== END OF COPY ==="
 
+cp -a ${MYDIR}/config/usr/lib/gstreamer-0.10/* /usr/lib/gstreamer-0.10/
+chmod 755 -R /usr/lib/gstreamer-0.10/libgstautodetect.so
+log_message "===    Copy libs to usr/lib/gstreamer-0.10     ==="
 
+count=$(grep -c '/imx-mm/video-codec' /etc/profile)
+if [ "$count" = "0" ]
+	then
+		sed -i 's/\/imx-mm\/parser/\/imx-mm\/parser:\/usr\/lib\/imx-mm\/video-codec/g' /etc/profile
+    log_message "===  Fix exports / codecs  ==="
+fi
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/imx-mm/video-codec
+
+rm -f /tmp/root/.gstreamer-0.10/registry.arm.bin
+/usr/bin/gst-inspect
+log_message "=== Updated gstreamer registry ==="
 
 # a window will appear for asking to reboot automatically
 sleep 3
