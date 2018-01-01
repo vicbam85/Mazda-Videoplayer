@@ -27,7 +27,10 @@ function addAdditionalApps() {
 				systemApp._masterApplicationDataList.items.push({ appData : { appName : additionalApp.name, isVisible : true,  mmuiEvent : 'Select'+additionalApp.name }, text1Id : additionalApp.name, disabled : false, itemStyle : 'style01', hasCaret : false });
 				framework.localize._appDicts[systemAppId][additionalApp.name] = additionalApp.label;
 				framework.common._contextCategory._contextCategoryTable[additionalApp.name+'.*'] = category;
-				if (additionalApp.preload != null) {
+				if(typeof systemApp._applicationsCtxtWiseAppNames !== "undefined" && systemApp._applicationsCtxtWiseAppNames.Applications.indexOf(additionalApp.name) === -1) {
+					systemApp._applicationsCtxtWiseAppNames.Applications.push(additionalApp.name);
+				}
+				if (additionalApp.preload !== undefined) {
 					var preloadPath = "apps/" + additionalApp.name + "/js/" + additionalApp.preload;
 					utility.loadScript(preloadPath);
 				}

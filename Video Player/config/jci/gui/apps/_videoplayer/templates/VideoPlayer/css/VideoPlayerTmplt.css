@@ -83,7 +83,7 @@
   padding-bottom: 22px;
 }
 #myVideoControlDiv ul li:active {
-  background: -o-linear-gradient(bottom,rgba(0,0,0,0),rgba(0,0,0,1));  /*Opera 11.1-12*/
+  background: linear-gradient(bottom,rgba(0,0,0,0),rgba(0,0,0,1));
   background-repeat: no-repeat !important;
   background-position: 0 3px;
 }
@@ -119,26 +119,25 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-#myVideoList ul li:focus,  #myVideoList ul li:active {
-  background: -o-linear-gradient(top,rgba(255,0,0,0),rgba(255,0,0,1));  /*Opera 11.1-12*/
-  background: -webkit-linear-gradient(to top, rgba(0,0,0,255), rgba(0,0,255,1));  /*Standard*/
-}
 #myVideoScroll {
   top:40px;
   right:40px;
   position:absolute;
 }
 #myVideoScroll {
-  margin-top:15px;
+  margin-top:35px;
 }
 #myVideoScroll img, #myVideoScroll li {
   display:block;
-  margin-top:15px;
+  margin-top:25px;
   width:50px;
   height:50px;
   background-repeat:no-repeat;
   background-position: center;
   background-size: 100%;
+}
+#myVideoScroll li#toggleBgBtn {
+    margin-top: 70px;
 }
 #videoPlayControl {
   top:64px;
@@ -254,6 +253,7 @@
 .selectedItemWhite {
   background: -webkit-linear-gradient(to top,rgba(255,255,255,1) 74%,rgba(0,0,0,0.1));
   color: #000!important;
+  text-shadow: 1px 1.5px 1px #eee!important;
 }
 .selectedItemPink,
 .selectedItemViolet {
@@ -287,19 +287,7 @@
 #myVideoList .selectedItemWhite {
   background: -webkit-linear-gradient(to left,rgba(255,255,255,0.1),rgba(255,255,255,1) 60%);
   color: #000!important;
-}
-#myVideoContainer .unicodeMessage {
-  position: absolute;
-  font-size: 20px;
-  color: #fff;
-  background: #000;
-  border: 6px double #6fffdf;
-  padding: 15px 0;
-  width: 65%;
-  top: 45%;
-  left: 15%;
-  text-align:center;
-  z-index: 20500;
+  text-shadow: 1px 1.5px 1px #eee!important;
 }
 #myVideoContainer #memErrorMessage {
   position: absolute;
@@ -345,7 +333,7 @@
   background-size: contain;
   background-repeat: no-repeat;
   z-index: 20400;
-  text-shadow: 2px 2px .8px #000;
+  text-shadow: 2px 2px .5px #000;
 }
 #videoInfoPanel.showInfo {
   display: block;
@@ -355,12 +343,9 @@ aside#widget-content {
   margin: 10px 40px;
   font-size: 13pt;
   height: 235px;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-#myVideoInfo, #myUnicodeToggle {
-  height: 50px;
-  width: 50px;
+  /*overflow-x: hidden;
+  overflow-y: auto;*/
+  overflow:hidden;
 }
 #infoTitle, #optionTitle {
   font-size: 25px;
@@ -382,9 +367,9 @@ aside#widget-content {
 #myVideoInfoClose a:focus,
 #myVideoInfoClose a:active,
 #myVideoInfoClose a.selectedItem {
-    color:#ff0000;
-    -webkit-transform: rotate(100deg); /* Chrome, Safari, Opera */
-    transform: rotate(100deg);
+  color:#ff0000;
+  -webkit-transform: rotate(100deg); /* Chrome, Safari, Opera */
+  transform: rotate(100deg);
 }
 #videoInfoPanel #popOptionsTab,
 #videoInfoPanel.state #popInfoTab{
@@ -424,13 +409,8 @@ aside#widget-content {
   position: relative;
   font-size: 20px;
 }
-#myVideoScroll #myUnicodeToggle {
-  visibility: visible;
-  margin-top:35px;
-}
 .btn {
   height: 50px;
-  text-shadow: none;
   font-weight: bold;
   font-size: 20px;
   border:none;
@@ -450,4 +430,7 @@ aside#widget-content {
 li {
   list-style: none;
   background-repeat:no-repeat;
+}
+li#colorThemes {
+  margin-top: 30px;
 }
