@@ -93,6 +93,19 @@
   margin-left: 10px;
 }
 
+#myMusicMetadata {
+  top:66px;
+  right:100px;
+  bottom:50px;
+  left:20px;
+  position:absolute;
+  font-size: 24px;
+  color: #cccccc;
+  font-family: verdana;
+  overflow: hidden;
+  visibility: hidden;
+}
+
 #myVideoList {
   top:66px;
   right:100px;
@@ -137,7 +150,7 @@
   background-size: 100%;
 }
 #myVideoScroll li#toggleBgBtn {
-    margin-top: 70px;
+    margin-top: 50px;
 }
 #videoPlayControl {
   top:64px;

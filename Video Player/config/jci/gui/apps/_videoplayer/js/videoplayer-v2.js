@@ -25,7 +25,7 @@
  *		|- Multicontroller support ----- [In Video List] ------------ [During Playback] ---------------|
  *		|----------------------------------------------------------------------------------------------|
  *		|- Press command knob ---------- [Select video] ------------- [Play/pause] --------------------|
- *		|- Tilt up --------------------- [Video list pgup] ---------- [Toggle fullscreen(next video)] -|
+ *		|- Tilt up --------------------- [Video list pgup] ---------- [Toggle fullscreen] -------------|
  *		|- Tilt down ------------------- [Video list pgdn] ---------- [Stop] --------------------------|
  *		|- Tilt Right ------------------ [Toggle shuffle mode] ------ [Next] --------------------------|
  *		|- Tilt left ------------------- [Toggle repeat all] -------- [Previous] ----------------------|
@@ -43,11 +43,20 @@
  *		After last video in the list is played, jumps to the first video in the list.
  *		User variables are saved to localStorage: shuffle, repeat 1, repeat all, fullscreen, and recently played list.
  *		Option to select the playback option with the commander (tilt left or right)
+ * v3.2 Sort order now is case insensitive (only for no unicode)
+ *		You can choose the color of the interface (Red, Orange, Green and Blue only). You have to change the name of the variable in the JS
+ *		You start the selecting the last played video
+ *		Small fixes on the FF / RW in order to make only one call
+ *		Added a plugin to the cmu in order to allow fullscreen toggle (commander up while playing). It allows to resize and rotate also (not available on the GUI yet)
+ *		 Delete the gstreamer registry on start in order to fix the plugin repository (Resets to the one without the codecs at car restart)
+ * v3.3 Fixes the unicode list retrieve and removes the "only unicode" method
+ *		Now it takes the time from gplay app
+ *		It has the option to play flac files (from the Music folder un the usb stick). More formats will be supported (They need to be tested)
+ *		It shows the metadata of the files when playing music
  * TODO:
- *		Get the time from gplay instead of the javascript in order to FF or RW more accurately
  *		Get Errors from gplay
  *		Change the audio input and stop the music player. If just mutes the player the system lags when playing
- *		Complete the plugins in the cmu in order to allow more file types and fullscreen toggle
+ *		Complete the plugins in the cmu in order to allow more file types
  */
 var enableLog = false;
 var vpColor = "Red";
@@ -61,6 +70,7 @@ var Repeat = JSON.parse(localStorage.getItem('videoplayer.repeat')) || false;
 var FullScreen =  JSON.parse(localStorage.getItem('videoplayer.fullscreen')) || false;
 var Shuffle = JSON.parse(localStorage.getItem('videoplayer.shuffle')) || false;
 var RepeatAll = JSON.parse(localStorage.getItem('videoplayer.repeatall')) || false;
+var PlayMusic = JSON.parse(localStorage.getItem('videoplayer.playmusic')) || false;
 var currentVideoListContainer = 0;
 var totalVideoListContainer = 0;
 var waitingWS = false;
@@ -81,8 +91,14 @@ var selectedOptionItem = -1; //6 ??
 var logFile = "/jci/gui/apps/_videoplayer/videoplayer_log.txt";
 var boxChecked = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)';
 var boxUncheck = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)';
-var startFullScreen =  false;
 var optionsPanelOpen = false;
+
+var metadataTitle;
+var metadataAlbum;
+var metadataComposer;
+var metadataAlbumArtist;
+var metadataArtist;
+var metadataTrackNumber;
 
 var src = '';
 
@@ -124,13 +140,14 @@ $(document).ready(function(){
   setCheckBoxes('#myVideoShuffleBtn', Shuffle);
   setCheckBoxes('#myVideoRepeatBtn', Repeat);
   setCheckBoxes('#myVideoRepeatAllBtn', RepeatAll);
+  setCheckBoxes('#myPlayMusicBtn', PlayMusic);
   function setCheckBoxes(opId, checkIt) {
     var check = (checkIt) ? boxChecked : boxUncheck;
     $(opId).css({'background-image': check});
   }
   $('#colorThemes a').click(function(e){
     var colorPick = $(this).html();
-    $('#colorThemes a').removeClass(vpColorClass).css('background','');
+    $('#colorThemes a').css('background','').removeClass(vpColorClass);
     vpColor = colorPick.charAt(0).toUpperCase() + colorPick.slice(1);
     vphColor = $(this).attr('class');
     vpColorClass = "selectedItem" + vpColor;
@@ -328,6 +345,21 @@ $(document).ready(function(){
 		localStorage.setItem('videoplayer.shuffle', JSON.stringify(Shuffle));
 	});
 
+	/* Music
+	==================================================================================*/
+	$('#myPlayMusicBtn').click(function(){
+		writeLog("myPlayMusicBtn Clicked");
+		if(PlayMusic){
+			PlayMusic = false;
+			$('#myPlayMusicBtn').css({'background-image' : boxUncheck});
+		} else {
+			PlayMusic = true;
+			$('#myPlayMusicBtn').css({'background-image' : boxChecked});
+		}
+		localStorage.setItem('videoplayer.playmusic', JSON.stringify(PlayMusic));
+		myVideoListRequest();
+	});
+
 	/* Toggle Background Button
 	==================================================================================*/
 	$('#toggleBgBtn').click(function(){
@@ -448,21 +480,21 @@ function myVideoListRequest(){
 			src += 'echo "====retrieve list start====" >> '+logFile+'; ';
 		}
 
-		//src += 'MNTFOLDER=\'' + folderPath + '\'; ';
-		//src += 'FILES=$(ls -d -1 $MNTFOLDER/sd*/Movies/** | sort -f -t \/ -k 6 | egrep ".avi|.mp4|.wmv|.flv"); ';
-		//src += 'FILES=$(echo "$FILES" | tr \'\n\' \'|\'); ';
-
-		//src += 'USBPATH=/tmp/mnt/sd*/Movies; ';
-
-			//'FOLDER=$(ls $USBPATH | grep -m 1 -i "movies"); ' +
-			//'USBPATH=$USBPATH/$FOLDER; '
-
 		src += 'FILES=""; ';
-		src += 'for VIDEO in /tmp/mnt/sd*/Movies/*.mp4 /tmp/mnt/sd*/Movies/*.avi /tmp/mnt/sd*/Movies/*.flv /tmp/mnt/sd*/Movies/*.wmv /tmp/mnt/sd*/Movies/*.3gp;' +
-			'do ' +
+
+		if (!PlayMusic)
+		{
+			src += 'for VIDEO in /tmp/mnt/sd*/Movies/*.mp4 /tmp/mnt/sd*/Movies/*.avi /tmp/mnt/sd*/Movies/*.flv /tmp/mnt/sd*/Movies/*.wmv /tmp/mnt/sd*/Movies/*.3gp;';
+		}
+		else
+		{
+			src += 'for VIDEO in /tmp/mnt/sd*/Music/*.flac;';
+		}
+
+		src += 'do ' +
 			'FILES="${FILES}${VIDEO}|"; ' +
 			'done; ' +
-			'FILES=$(echo "${FILES}" | tr \'|\' \'\n\' | sort -f | tr \'\n\' \'|\'); ';
+			'FILES=$(echo "${FILES}" | tr \'|\' \'\n\' | sort -f -t \/ -k 6 | tr \'\n\' \'|\'); ';
 
 		src += 'echo playback-list#"${FILES}"';
 
@@ -476,14 +508,17 @@ function myVideoListResponse(data){
 	writeLog("myVideoListResponse called");
 	waitingWS=false;
 
-	var videoList = $("#myVideoList");
-	videoList.html("");
+	//var videoList = $("#myVideoList");
+	//videoList.html("");
+	$("#myVideoList").html("");
 
 	data = data.replace(folderPath+'/sd*/Movies/*.mp4|', '');
 	data = data.replace(folderPath+'/sd*/Movies/*.avi|', '');
 	data = data.replace(folderPath+'/sd*/Movies/*.flv|', '');
 	data = data.replace(folderPath+'/sd*/Movies/*.wmv|', '');
 	data = data.replace(folderPath+'/sd*/Movies/*.3gp|', '');
+	data = data.replace(folderPath+'/sd*/Music/*.mp3|', '');
+	data = data.replace(folderPath+'/sd*/Music/*.flac|', '');
 
 	data = data.substring(1);
 
@@ -491,15 +526,29 @@ function myVideoListResponse(data){
 	videos.splice(videos.length - 1);
 	totalVideoListContainer = 1;
 
-	if(videos[0] === ""){
+
+	if((!videos[0]) || (videos[0] === "")){
 		writeLog("No videos found");
-		videoList.html('No videos found<br/><br/>Tap <img src="apps/_videoplayer/templates/VideoPlayer/images/myVideoMovieBtn.png" style="margin-left:8px; margin-right:8px" /> to search again<br/></br>Make sure your avi/mp4/flv/wmv files are in the "Movies" folder');
+		
+		var txt;
+		
+		if (!PlayMusic)
+		{
+			txt = 'No videos found<br><br>Tap <img src="apps/_videoplayer/templates/VideoPlayer/images/myVideoMovieBtn.png" style="margin-left:8px; margin-right:8px" /> to search again<br><br>Make sure your avi/mp4/flv/wmv/3gp files are in the "Movies" folder';
+		}
+		else
+		{
+			txt = 'No music found<br><br>Tap <img src="apps/_videoplayer/templates/VideoPlayer/images/myVideoMovieBtn.png" style="margin-left:8px; margin-right:8px" /> to search again<br><br>Make sure your flac/mp3 files are in the "Music" folder';
+		}
+		
+		//videoList.html(txt);
+		$("#myVideoList").html(txt);
 
 		currentVideoTrack = null;
 
     $(".playbackOption").css("background-image", function(i, val){return val.substring(0, val.indexOf(")")+1);});
 
-		selectedOptionItem = 0;
+		selectedOptionItem = 8;
 
     $(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){return val + ", -o-linear-gradient(top," + vphColor + ", rgba(0,0,0,0))";});
 	}
@@ -508,7 +557,8 @@ function myVideoListResponse(data){
 
 		writeLog("myVideoList insert data --- " + data);
 
-		videoList.append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
+		$(".playbackOption").css("background-image", function(i, val){return val.substring(0, val.indexOf(")") + 1);});
+		$("#myVideoList").append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
 		.addClass("videoListContainer"));
 		var videoListUl = $("#ul" + totalVideoListContainer);
 
@@ -517,13 +567,20 @@ function myVideoListResponse(data){
 			if ((index > 0) && (index) % 8 === 0)
 			{
 				totalVideoListContainer++;
-				videoList.append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
+				$("#myVideoList").append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
 				.addClass("videoListContainer"));
 				videoListUl = $("#ul"+totalVideoListContainer);
-
 			}
+
 			var videoName = item.replace(folderPath, '');
+			if (!PlayMusic)
+			{
 			videoName = videoName.substring(videoName.search(/\/movies\//i) + 8);
+			}
+			else
+			{
+				videoName = videoName.substring(videoName.search(/\/music\//i) + 7);
+			}
 
 			videoListUl.append($('<li></li>')
 			.attr({
@@ -583,8 +640,6 @@ function myVideoListScrollUpDown(action){
 	});
 
 	$(".videoListContainer:eq(" + currentVideoListContainer + ")").css("display", "");
-	$('#toggleBgBtn').css({'visibility' : 'visible'});
-	$('#myVideoInfo').css({'visibility' : 'visible'});
 }
 
 
@@ -592,19 +647,28 @@ function myVideoListScrollUpDown(action){
 ==========================================================================================================*/
 function myVideoStartRequest(obj){
 	writeLog("myVideoStartRequest called");
+	
 	 $('#videoInfoPanel').removeClass('showInfo');
 	optionsPanelOpen = false;
 	currentVideoTrack = $(".videoTrack").index(obj);
 	var videoToPlay = obj.attr('video-data');
 	$('#myVideoName').html('Preparing to play...');
+	$('#myMusicMetadata').html('');
 	$('#myVideoName').css({'display' : 'block'});
 	$('#myVideoStatus').css({'display' : 'block'});
 	$('.memErrorMessage').remove();
 	writeLog("Recently Played: " + recentlyPlayed);
 	$('#widgetContent').prepend($('</div>').addClass('recentPlayedItem').text(currentVideoTrack + ": " + videoToPlay));
 
+	metadataAlbum = null;
+	metadataAlbumArtist = null;
+	metadataArtist = null;
+	metadataComposer = null;
+	metadataTitle = null;
+	
 	localStorage.setItem('videoplayer.currentvideo', JSON.stringify(currentVideoTrack));
 
+	TotalVideoTime = null;
 	waitingNext = false;
 
 	writeLog("myVideoStartRequest - Video #" + currentVideoTrack + ": " + videoToPlay);
@@ -623,10 +687,10 @@ function myVideoStartRequest(obj){
 
 	//writeLog("myVideoStartRequest - Kill gplay");
 
-	//myVideoWs('sync && echo 3 > /proc/sys/vm/drop_caches; ', false); //start-playback
 	myVideoWs('sync; for n in 0 1 2 3; do echo $n > /proc/sys/vm/drop_caches; done;', false);
 
 	$('#myVideoList').css({'visibility' : 'hidden'});
+	$('#myMusicMetadata').css({'visibility' : 'visible'});
 	$('#myVideoScrollDown').css({'visibility' : 'hidden'});
 	$('#myVideoScrollUp').css({'visibility' : 'hidden'});
 	$('#myVideoInfo').css({'visibility' : 'hidden'});
@@ -638,6 +702,7 @@ function myVideoStartRequest(obj){
 	$('#myVideoFullScrBtn').css({'display' : 'none'});
 	$('#myVideoRepeatBtn').css({'display' : 'none'});
 	$('#myVideoRepeatAllBtn').css({'display' : 'none'});
+	$('#myPlayMusicBtn').css({'display' : 'none'});
 	$('#rebootBtnDiv').css({'display' : 'none'});
 
 	$('#myVideoPreviousBtn').css({'display' : ''});
@@ -690,8 +755,6 @@ function myVideoStartRequest(obj){
 
 		CurrentVideoPlayTime = -5;
 
-		startFullScreen = FullScreen;
-
 		wsVideo = new WebSocket('ws://127.0.0.1:9998/');
 
 		wsVideo.onopen = function(){
@@ -703,8 +766,6 @@ function myVideoStartRequest(obj){
 
 		wsVideo.onmessage=function(event)
 		{
-			//$('#myVideoStatus').html(event.data + " - " + event.data.length);
-
 			checkStatus(event.data);
 
 		};
@@ -715,6 +776,12 @@ function myVideoStartRequest(obj){
 		writeLog("Error: " + err);
 	}
 
+	if ((!PlayMusic) && (!FullScreen))
+	{
+		setTimeout(function () {
+			wsVideo.send('z 50 64 700 367');
+		}, 400);
+	}
 }
 
 
@@ -777,8 +844,8 @@ function myVideoNextRequest(){
 		localStorage.setItem('videoplayer.recentlyplayed', JSON.stringify(recentlyPlayed));
 
 		writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
-
 		var nextVideoObject = $(".videoTrack:eq(" + nextVideoTrack + ")");
+
 		if(nextVideoObject.length !== 0)
 		{
 			wsVideo.send('x');
@@ -880,11 +947,13 @@ function myVideoStopRequest(){
 	$('#myVideoFullScrBtn').css({'display' : ''});
 	$('#myVideoRepeatBtn').css({'display' : ''});
 	$('#myVideoRepeatAllBtn').css({'display' : ''});
+	$('#myPlayMusicBtn').css({'display' : ''});
 	$('#rebootBtnDiv').css({'display' : ''});
 
 	$('#toggleBgBtn').css({'visibility' : 'visible'});
 	$('#myVideoInfo').css({'visibility' : 'visible'});
 	$('#myVideoList').css({'visibility' : 'visible'});
+	$('#myMusicMetadata').css({'visibility' : 'hidden'});
 	myVideoListScrollUpDown('other');
 
 }
@@ -935,6 +1004,7 @@ function myVideoFFRequest(){
 		{
 			CurrentVideoPlayTime = TotalVideoTime - 1;
 		}
+		
 		wsVideo.send('e 1 t' + CurrentVideoPlayTime);
 
 		waitingWS = false;
@@ -1008,29 +1078,105 @@ function checkStatus(state)
 {
 	var res = state.trim();
 
-	if (res.indexOf("Duration")> -1)
+	if (res.indexOf("Playing  ]") !== -1)
 	{
-		//res = res[3].substring(0,res[3].indexOf("]"));
-		//res = res.split("/");
-		CurrentVideoPlayTime = -1;
-		res = res.substring(res.indexOf(":") + 2);
-		res = res.split(":");
-		res = Number(res[0]*3600) + Number(res[1]*60) + Number(res[2].substring(0,2));
+		res = res.substring(res.indexOf("Vol=") + 8, res.indexOf("Vol=") + 25); 
+		$('#myVideoStatus').html(res);
+		
+		var time;
+		
+		if (!TotalVideoTime)
+		{
+			time = res.substring(9, 17);
+			time = time.split(":");
+			time = Number(time[0]*3600) + Number(time[1]*60) + Number(time[2].substring(0,2));
+		
+			TotalVideoTime = time;
+		}
+		
+		time = res.substring(0, 8);
+		time = time.split(":");
+		time = Number(time[0]*3600) + Number(time[1]*60) + Number(time[2].substring(0,2));
 
-		TotalVideoTime = res;
-		CurrentVideoPlayTime = -1;
+		CurrentVideoPlayTime = time;
 
+		if (CurrentVideoPlayTime === TotalVideoTime)
+		{
+			waitingNext = true;
+			myVideoNextRequest();
 	}
-	else if (res.indexOf("ERR]") > -1)
+	}
+	else if ((!metadataTitle) && (res.indexOf("title: ") !== -1))
+	{		
+		metadataTitle = res.substring(7);
+		DisplayMetadata();
+	}
+	else if ((!metadataAlbumArtist) && (res.indexOf("album artist: ") !== -1))
+	{
+		metadataAlbumArtist = res.substring(14);
+		DisplayMetadata();
+	}
+	else if ((!metadataAlbum) && (res.indexOf("album: ") !== -1))
+	{
+		metadataAlbum = res.substring(7);
+		DisplayMetadata();
+	}
+	else if ((!metadataArtist) && (res.indexOf("artist: ") !== -1))
+	{
+		metadataArtist = res.substring(8);
+		DisplayMetadata();
+	}
+	else if ((!metadataComposer) && (res.indexOf("composer: ") !== -1))
+	{
+		metadataComposer = res.substring(10);
+		DisplayMetadata();
+	}
+	else if (res.indexOf("track number: ") !== -1)
+	{
+		metadataTrackNumber = res.substring(13);
+		DisplayMetadata();
+	}
+	else if (res.indexOf("ERR]") !== -1)
 	{
 		showMemErrorMessage(res);
 	}
-	else if (res.indexOf("fsl_player_stop") > -1)
+	else if (res.indexOf("fsl_player_stop") !== -1)
 	{
 		myVideoNextRequest();
 	}
-	//$('#widgetContentState').prepend(res + "<br />");
+}
 
+
+/* Display Metadata
+============================================================================================= */
+function DisplayMetadata()
+{
+	var txt = "";
+	if (metadataTitle)
+	{
+		txt += '<br>Title: ' + metadataTitle;
+	}
+	if (metadataArtist)
+	{
+		txt += '<br>Artist: ' + metadataArtist;
+	}
+	if (metadataAlbumArtist)
+	{
+		txt += '<br>Album Artist: ' + metadataAlbumArtist;
+	}
+	if (metadataAlbum)
+	{
+		txt += '<br>Album: ' + metadataAlbum;
+	}
+	if (metadataComposer)
+	{
+		txt += '<br>Composer: ' + metadataComposer;
+	}
+	if (metadataTrackNumber)
+	{
+		txt += '<br>Track Number: ' + metadataTrackNumber;
+	}
+	$("#myMusicMetadata").html(txt);
 }
 
 
@@ -1085,51 +1231,7 @@ function showMemErrorMessage(res){
 function startPlayTimeInterval()
 {
 	intervalPlaytime = setInterval(function (){
-
-		if (!VideoPaused)
-		{
-			CurrentVideoPlayTime++;
-			if (CurrentVideoPlayTime === 0)
-			{
-				if (!FullScreen)
-				{
-					wsVideo.send('z 50 64 700 367');
-				}
-			}
-
-			var state = '';
-			var hours = Math.floor(CurrentVideoPlayTime / 3600);
-			var minutes = Math.floor((CurrentVideoPlayTime - (hours * 3600)) / 60);
-			var seconds = CurrentVideoPlayTime - (hours * 3600) - (minutes * 60);
-
-			if(hours >= 0 && hours < 10){hours = "0" + hours;}
-			if(minutes >= 0 && minutes < 10){minutes = "0" + minutes;}
-			if(seconds >= 0 && seconds < 10){seconds = "0" + seconds;}
-
-			state = hours + ":" + minutes + ":" + seconds;
-
-			hours = Math.floor(TotalVideoTime / 3600);
-			minutes = Math.floor((TotalVideoTime - (hours * 3600)) / 60);
-			seconds = TotalVideoTime - (hours * 3600) - (minutes * 60);
-
-			if(hours >= 0 && hours < 10){hours = "0" + hours;}
-			if(minutes >= 0 && minutes < 10){minutes = "0" + minutes;}
-			if(seconds >= 0 && seconds < 10){seconds = "0" + seconds;}
-
-			state = state + " / " + hours + ":" + minutes + ":" + seconds;
-
-			if (CurrentVideoPlayTime >= 0 && TotalVideoTime > 0)
-			{
-				$('#myVideoStatus').html(state);
-			}
-
-			if ((!waitingNext) && (TotalVideoTime > 0) && (CurrentVideoPlayTime >= TotalVideoTime + 1))
-			{
-				waitingNext = true;
-				myVideoNextRequest();
-			}
-		}
-
+		wsVideo.send('h');
 	}, 1000);
 }
 
@@ -1353,7 +1455,7 @@ function handleCommander(eventID)
 
 			if (selectedOptionItem < 0)
 			{
-				selectedOptionItem = 7;
+				selectedOptionItem = 8;
 			}
 
 			$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){return val + ", -o-linear-gradient(top," + vphColor + ", rgba(0,0,0,0))";});
