@@ -133,12 +133,12 @@
   text-overflow: ellipsis;
 }
 #myVideoScroll {
-  top:40px;
+  top:20px;
   right:40px;
   position:absolute;
 }
 #myVideoScroll {
-  margin-top:35px;
+  margin-top:25px;
 }
 #myVideoScroll img, #myVideoScroll li {
   display:block;
@@ -148,9 +148,6 @@
   background-repeat:no-repeat;
   background-position: center;
   background-size: 100%;
-}
-#myVideoScroll li#toggleBgBtn {
-    margin-top: 50px;
 }
 #videoPlayControl {
   top:64px;
