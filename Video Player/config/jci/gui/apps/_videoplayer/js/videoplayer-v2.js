@@ -99,6 +99,9 @@ var metadataComposer;
 var metadataAlbumArtist;
 var metadataArtist;
 var metadataTrackNumber;
+var metadataGenre;
+var metadataComment;
+var metadataAudioCodec;
 
 var src = '';
 
@@ -114,7 +117,16 @@ $(document).ready(function(){
 		*  Then switch back to videoplayer and play a video.
 		*  This is a temporary solution untill a better one is discovered.
 		*/
-		//var usbaudioApp = framework.getAppInstance("usbaudio");
+		var btAudioApp = framework.getAppInstance("btaudio");
+		if(typeof btAudioApp === "undefined") {
+			framework.sendEventToMmui('system','SelectBTAudio');
+			setTimeout(function(){
+				framework.sendEventToMmui('usbaudio','Global.Pause');
+				framework.sendEventToMmui('common','Global.GoBack');
+			}, 1200);
+		}
+		framework.sendEventToMmui('usbaudio','Global.Pause');
+
 		//framework.sendEventToMmui(usbaudioApp.uiaId, "Global.Pause");
 		//usbaudioApp._changePlayButton("pause");
     if (localStorage.getItem('videoplayer.colortheme')) {
@@ -157,12 +169,11 @@ $(document).ready(function(){
   });
 
 
-	if (enableLog)
-	{
-		myVideoWs('mount -o rw,remount /; hwclock --hctosys; ', false); //enable-write - Change Date
-
-		writeLog("\n---------------------------------------------------------------------------------\napp start\nStart App Config\n====creating swap====");
-	}
+	// if (enableLog)
+	// {
+		// myVideoWs('mount -o rw,remount /; hwclock --hctosys; ', false); //enable-write - Change Date
+		// //writeLog("\n---------------------------------------------------------------------------------\napp start\nStart App Config\n====creating swap====");
+	// }
 
 	src = 'USBDRV=$(ls /mnt | grep sd); ' +
 
@@ -179,10 +190,10 @@ $(document).ready(function(){
 		'fi; ' +
 		'done; ';
 
-	if (enableLog)
-	{
-		src += 'cat /proc/swaps >> '+ logFile +'; ';
-	}
+	// if (enableLog)
+	// {
+		// src += 'cat /proc/swaps >> '+ logFile +'; ';
+	// }
 
 	src += 'rm -f /tmp/root/.gstreamer-0.10/registry.arm.bin;'; //cleans the gstreamer registry
 
@@ -193,46 +204,46 @@ $(document).ready(function(){
 	/* reboot system
 	==================================================================================*/
 	$('#rebootBtnDiv').click(function(){
-		writeLog("rebootBtn Clicked");
+		//writeLog("rebootBtn Clicked");
 		myRebootSystem();
 	});
 
 	/* retrieve video list
 	==================================================================================*/
 	$('#myVideoMovieBtn').click(function(){
-		writeLog("myVideoMovieBtn Clicked");
+		//writeLog("myVideoMovieBtn Clicked");
 		myVideoListRequest();
 	});
 
 	/* scroll up video list
 	==================================================================================*/
 	$('#myVideoScrollUp').click(function(){
-		writeLog("myVideoScrollUp Clicked");
+		//writeLog("myVideoScrollUp Clicked");
 		myVideoListScrollUpDown('up');
 	});
 
 	/* scroll down video list
 	==================================================================================*/
 	$('#myVideoScrollDown').click(function(){
-		writeLog("myVideoScrollDown Clicked");
+		//writeLog("myVideoScrollDown Clicked");
 		myVideoListScrollUpDown('down');
 	});
 
 	/* play pause playback
 	==================================================================================*/
 	$('#myVideoPausePlayBtn').click(function(){
-		writeLog("myVideoPausePlayBtn Clicked");
+		//writeLog("myVideoPausePlayBtn Clicked");
 		myVideoPausePlayRequest();
 	});
 	$('#videoPlayBtn').click(function(){
-		writeLog("videoPlayBtn Clicked");
+		//writeLog("videoPlayBtn Clicked");
 		myVideoPausePlayRequest();
 	});
 
 	/* FullScreen playback
 	==================================================================================*/
 	$('#myVideoFullScrBtn').click(function(){
-		writeLog("myVideoFullScrBtn Clicked");
+		//writeLog("myVideoFullScrBtn Clicked");
 		if(FullScreen){
 			FullScreen = false;
 			$('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
@@ -247,57 +258,57 @@ $(document).ready(function(){
 	/* stop playback
 	==================================================================================*/
 	$('#myVideoStopBtn, #videoStopBtn').click(function(){
-		writeLog("myVideoStopBtn Clicked");
+		//writeLog("myVideoStopBtn Clicked");
 		myVideoStopRequest();
 	});
 
 	/* start playback
 	==================================================================================*/
 	$('#myVideoList').on("click", "li", function() {
-		writeLog("myVideoList Clicked");
+		//writeLog("myVideoList Clicked");
 		myVideoStartRequest($(this));
 	});
 
 	/* next track
 	==================================================================================*/
 	$('#myVideoNextBtn, #videoNextBtn').click(function(){
-		writeLog("myVideoNextBtn Clicked");
+		//writeLog("myVideoNextBtn Clicked");
 		myVideoNextRequest();
 	});
 
 	/* previous track
 	==================================================================================*/
 	$('#myVideoPreviousBtn, #videoPrevBtn').click(function(){
-		writeLog("myVideoPreviousBtn Clicked");
+		//writeLog("myVideoPreviousBtn Clicked");
 		myVideoPreviousRequest();
 	});
 
 	/* FF
 	==================================================================================*/
 	$('#myVideoFF').click(function(){
-		writeLog("myVideoFF Clicked");
+		//writeLog("myVideoFF Clicked");
 		myVideoFFRequest();
 	});
 	$('#videoPlayFFBtn').click(function(){
-		writeLog("videoPlayFFBtn Clicked");
+		//writeLog("videoPlayFFBtn Clicked");
 		myVideoFFRequest();
 	});
 
 	/* RW
 	==================================================================================*/
 	$('#myVideoRW').click(function(){
-		writeLog("myVideoRW Clicked");
+		//writeLog("myVideoRW Clicked");
 		myVideoRWRequest();
 	});
 	$('#videoPlayRWBtn').click(function(){
-		writeLog("videoPlayRWBtn Clicked");
+		//writeLog("videoPlayRWBtn Clicked");
 		myVideoRWRequest();
 	});
 
 	/* repeat option (looping single track)
 	==================================================================================*/
 	$('#myVideoRepeatBtn').click(function(){
-		writeLog("myVideoRepeatBtn Clicked");
+		//writeLog("myVideoRepeatBtn Clicked");
 		if(Repeat){
 			Repeat = false;
 			$('#myVideoRepeatBtn').css({'background-image' : boxUncheck});
@@ -306,14 +317,14 @@ $(document).ready(function(){
 			$('#myVideoRepeatBtn').css({'background-image' : boxChecked});
 		}
 		recentlyPlayed = [];
-		writeLog("recentlyPlayed Reset");
+		//writeLog("recentlyPlayed Reset");
 		localStorage.setItem('videoplayer.repeat', JSON.stringify(Repeat));
 	});
 
 	/* repeat all option (loop entire video list)
 	==================================================================================*/
 	$('#myVideoRepeatAllBtn, #videoReAllBtn').click(function(){
-		writeLog("myVideoRepeatAllBtn Clicked");
+		//writeLog("myVideoRepeatAllBtn Clicked");
 		if(RepeatAll){
 			RepeatAll = false;
 			$('#myVideoRepeatAllBtn').css({'background-image' : boxUncheck});
@@ -322,20 +333,20 @@ $(document).ready(function(){
 			$('#myVideoRepeatAllBtn').css({'background-image' : boxChecked});
 		}
 		recentlyPlayed = [];
-		writeLog("recentlyPlayed Reset");
+		//writeLog("recentlyPlayed Reset");
 		localStorage.setItem('videoplayer.repeatall', JSON.stringify(RepeatAll));
 	});
 
 	/* Shuffle option
 	==================================================================================*/
 	$('#myVideoShuffleBtn, #videoShuffleBtn').click(function(){
-		writeLog("myVideoShuffleBtn Clicked");
+		//writeLog("myVideoShuffleBtn Clicked");
 		if(Shuffle)
 		{
 			Shuffle = false;
 			$('#myVideoShuffleBtn').css({'background-image' : boxUncheck});
 			recentlyPlayed = [];
-			writeLog("recentlyPlayed Reset");
+			//writeLog("recentlyPlayed Reset");
 		}
 		else
 		{
@@ -348,7 +359,7 @@ $(document).ready(function(){
 	/* Music
 	==================================================================================*/
 	$('#myPlayMusicBtn').click(function(){
-		writeLog("myPlayMusicBtn Clicked");
+		//writeLog("myPlayMusicBtn Clicked");
 		if(PlayMusic){
 			PlayMusic = false;
 			$('#myPlayMusicBtn').css({'background-image' : boxUncheck});
@@ -370,7 +381,7 @@ $(document).ready(function(){
 	/* Show Current Playing Video Title in the Statusbar
 	==================================================================================*/
 	$('#optionStatusbarTitle').click(function(){
-		writeLog("optionStatusbarTitle Clicked");
+		//writeLog("optionStatusbarTitle Clicked");
 		statusbarTitleVideo = !statusbarTitleVideo;
 		if (statusbarTitleVideo) {
 			$('#optionStatusbarTitle').css({'background-image' : boxChecked});
@@ -381,8 +392,8 @@ $(document).ready(function(){
 		localStorage.setItem('videoplayer.statusbartitle', JSON.stringify(statusbarTitleVideo));
 	});
 	$('#optionTestError').click(function(){
-		writeLog("optionTestError Clicked... ");
-		writeLog("When all your videos are optimized to 360p MP4 H264 AAC format you will almost never hit a memory error");
+		//writeLog("optionTestError Clicked... ");
+		//writeLog("When all your videos are optimized to 360p MP4 H264 AAC format you will almost never hit a memory error");
 		var res = "test";
 		showMemErrorMessage(res);
 		$('.memErrorMessage').delay(1500).fadeOut(1000);
@@ -414,7 +425,6 @@ $(document).ready(function(){
 
 
 	setTimeout(function () {
-		//writeLog("setTimeout started");
 		myVideoListRequest();
 	}, 500);
 
@@ -430,11 +440,11 @@ $(document).ready(function(){
 
 			clearInterval(intervalPlaytime);
 
-			if (enableLog === true)
-			{
-				writeLog("Closing App - New App: " + framework.getCurrentApp());
-				myVideoWs('mount -o ro,remount /', false); //disable-write
-			}
+			//if (enableLog === true)
+			//{
+				//writeLog("Closing App - New App: " + framework.getCurrentApp());
+				//myVideoWs('mount -o ro,remount /', false); //disable-write
+			//}
 
 		}
 	}, 1);//some performance issues ??
@@ -451,7 +461,7 @@ $(document).ready(function(){
 /* reboot system
 ==========================================================================================================*/
 function myRebootSystem(){
-	writeLog("myRebootSystem called");
+	//writeLog("myRebootSystem called");
 	myVideoWs('reboot', false); //reboot
 }
 
@@ -459,7 +469,7 @@ function myRebootSystem(){
 /* video list request / response
 ==========================================================================================================*/
 function myVideoListRequest(){
-	writeLog("myVideoListRequest called");
+	//writeLog("myVideoListRequest called");
 	if (!waitingWS)
 	{
 		waitingWS=true;
@@ -471,24 +481,24 @@ function myVideoListRequest(){
 		$('#myVideoList').html("<img id='ajaxLoader' src='apps/_videoplayer/templates/VideoPlayer/images/ajax-loader.gif'>");
 
 
-		writeLog("Start List Recall");
+		//writeLog("Start List Recall");
 
 		src='';
 
-		if (enableLog)
-		{
-			src += 'echo "====retrieve list start====" >> '+logFile+'; ';
-		}
+		//if (enableLog)
+		//{
+			//src += 'echo "====retrieve list start====" >> '+logFile+'; ';
+		//}
 
 		src += 'FILES=""; ';
 
 		if (!PlayMusic)
 		{
-			src += 'for VIDEO in /tmp/mnt/sd*/Movies/*.mp4 /tmp/mnt/sd*/Movies/*.avi /tmp/mnt/sd*/Movies/*.flv /tmp/mnt/sd*/Movies/*.wmv /tmp/mnt/sd*/Movies/*.3gp;';
+			src += 'for VIDEO in /tmp/mnt/sd*/Movies/*.mp4 /tmp/mnt/sd*/Movies/*.avi /tmp/mnt/sd*/Movies/*.flv /tmp/mnt/sd*/Movies/*.wmv /tmp/mnt/sd*/Movies/*.3gp /tmp/mnt/sd*/Movies/*.mkv;';
 		}
 		else
 		{
-			src += 'for VIDEO in /tmp/mnt/sd*/Music/*.flac;';
+			src += 'for VIDEO in /tmp/mnt/sd*/Music/*.flac /tmp/mnt/sd*/Music/*.mp3;';
 		}
 
 		src += 'do ' +
@@ -498,18 +508,16 @@ function myVideoListRequest(){
 
 		src += 'echo playback-list#"${FILES}"';
 
-		writeLog(src);
+		//writeLog(src);
 		myVideoWs(src, true); //playback-list
 	}
 
 }
 
 function myVideoListResponse(data){
-	writeLog("myVideoListResponse called");
+	//writeLog("myVideoListResponse called");
 	waitingWS=false;
 
-	//var videoList = $("#myVideoList");
-	//videoList.html("");
 	$("#myVideoList").html("");
 
 	data = data.replace(folderPath+'/sd*/Movies/*.mp4|', '');
@@ -517,6 +525,7 @@ function myVideoListResponse(data){
 	data = data.replace(folderPath+'/sd*/Movies/*.flv|', '');
 	data = data.replace(folderPath+'/sd*/Movies/*.wmv|', '');
 	data = data.replace(folderPath+'/sd*/Movies/*.3gp|', '');
+	data = data.replace(folderPath+'/sd*/Movies/*.mkv|', '');
 	data = data.replace(folderPath+'/sd*/Music/*.mp3|', '');
 	data = data.replace(folderPath+'/sd*/Music/*.flac|', '');
 
@@ -528,7 +537,7 @@ function myVideoListResponse(data){
 
 
 	if((!videos[0]) || (videos[0] === "")){
-		writeLog("No videos found");
+		//writeLog("No videos found");
 		
 		var txt;
 		
@@ -541,7 +550,6 @@ function myVideoListResponse(data){
 			txt = 'No music found<br><br>Tap <img src="apps/_videoplayer/templates/VideoPlayer/images/myVideoMovieBtn.png" style="margin-left:8px; margin-right:8px" /> to search again<br><br>Make sure your flac/mp3 files are in the "Music" folder';
 		}
 		
-		//videoList.html(txt);
 		$("#myVideoList").html(txt);
 
 		currentVideoTrack = null;
@@ -554,8 +562,7 @@ function myVideoListResponse(data){
 	}
 	else
 	{
-
-		writeLog("myVideoList insert data --- " + data);
+		//writeLog("myVideoList insert data --- " + data);
 
 		$(".playbackOption").css("background-image", function(i, val){return val.substring(0, val.indexOf(")") + 1);});
 		$("#myVideoList").append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
@@ -606,7 +613,7 @@ function myVideoListResponse(data){
 /* video list scroll up / down
 ==========================================================================================================*/
 function myVideoListScrollUpDown(action){
-	writeLog("myVideoListScrollUpDown called");
+	//writeLog("myVideoListScrollUpDown called");
 
 	switch(action) {
 		case 'up':
@@ -646,18 +653,19 @@ function myVideoListScrollUpDown(action){
 /* start playback request / response
 ==========================================================================================================*/
 function myVideoStartRequest(obj){
-	writeLog("myVideoStartRequest called");
+	//writeLog("myVideoStartRequest called");
 	
 	 $('#videoInfoPanel').removeClass('showInfo');
 	optionsPanelOpen = false;
 	currentVideoTrack = $(".videoTrack").index(obj);
 	var videoToPlay = obj.attr('video-data');
 	$('#myVideoName').html('Preparing to play...');
+	$('#myVideoStatus').html('');
 	$('#myMusicMetadata').html('');
 	$('#myVideoName').css({'display' : 'block'});
 	$('#myVideoStatus').css({'display' : 'block'});
 	$('.memErrorMessage').remove();
-	writeLog("Recently Played: " + recentlyPlayed);
+	//writeLog("Recently Played: " + recentlyPlayed);
 	$('#widgetContent').prepend($('</div>').addClass('recentPlayedItem').text(currentVideoTrack + ": " + videoToPlay));
 
 	metadataAlbum = null;
@@ -665,23 +673,27 @@ function myVideoStartRequest(obj){
 	metadataArtist = null;
 	metadataComposer = null;
 	metadataTitle = null;
+	metadataTrackNumber = null;
+	metadataComment = null;
+	metadataGenre = null;
+	metadataAudioCodec = null;
 	
 	localStorage.setItem('videoplayer.currentvideo', JSON.stringify(currentVideoTrack));
 
 	TotalVideoTime = null;
 	waitingNext = false;
 
-	writeLog("myVideoStartRequest - Video #" + currentVideoTrack + ": " + videoToPlay);
+	//writeLog("myVideoStartRequest - Video #" + currentVideoTrack + ": " + videoToPlay);
 
 	if (recentlyPlayed.indexOf(currentVideoTrack) === -1)
 	{
 		recentlyPlayed.push(currentVideoTrack);
-		writeLog("Add Track " + currentVideoTrack + " to recentlyPlayed list");
+		//writeLog("Add Track " + currentVideoTrack + " to recentlyPlayed list");
 	}
 	else
 	{
 		recentlyPlayed.push(recentlyPlayed.splice(recentlyPlayed.indexOf(currentVideoTrack), 1)[0]);
-		writeLog("Moved Track " + currentVideoTrack + " to end of the recentlyPlayed list");
+		//writeLog("Moved Track " + currentVideoTrack + " to end of the recentlyPlayed list");
 	}
 	//myVideoWs('killall gplay', false); //start-playback
 
@@ -714,7 +726,6 @@ function myVideoStartRequest(obj){
 	$('#myVideoName').html(obj.attr('video-name').replace(/ /g, "&nbsp;"));
 
 	//$('.videoTouchControls').show();
-	//$('#videoPlayControl').css({'display' : 'block'});
 	$('#videoPlayControl').css('cssText', 'display: block !important');
 	$('#videoPlayBtn').css({'background-image' : ''});
 
@@ -724,9 +735,9 @@ function myVideoStartRequest(obj){
 		src = 'killall -9 gplay; ';
 		src += 'sleep 0.3; ';
 
-		writeLog('start playing');
+		//writeLog('start playing');
 
-		writeLog(videoToPlay);
+		//writeLog(videoToPlay);
 		if (statusbarTitleVideo) {
 			framework.common.setSbName($('#myVideoName').text());
 		}
@@ -745,22 +756,24 @@ function myVideoStartRequest(obj){
 		//src += '" --audio-sink=alsasink ';
 		src += '"' + videoToPlay + '" 2>&1 ';
 
-		if (enableLog)
-		{
-			src += "| tee -a "+ logFile +"; ";
-		}
+		//if (enableLog)
+		//{
+			//src += "| tee -a "+ logFile +"; ";
+		//}
 
-
-		writeLog(src);
+		//writeLog(src);
 
 		CurrentVideoPlayTime = -5;
 
 		wsVideo = new WebSocket('ws://127.0.0.1:9998/');
 
 		wsVideo.onopen = function(){
+			if (PlayMusic)
+			{
+				wsVideo.send('/usr/bin/gst-discoverer-0.10 "' + videoToPlay + '"');
+			}
 			wsVideo.send(src);
 
-			startPlayTimeInterval();
 
 		};
 
@@ -773,27 +786,27 @@ function myVideoStartRequest(obj){
 	}
 	catch(err)
 	{
-		writeLog("Error: " + err);
+		//writeLog("Error: " + err);
 	}
 
-	if ((!PlayMusic) && (!FullScreen))
-	{
-		setTimeout(function () {
-			wsVideo.send('z 50 64 700 367');
-		}, 400);
-	}
+	// if ((!PlayMusic) && (!FullScreen))
+	// {
+		// setTimeout(function () {
+			// wsVideo.send('z 50 64 700 367');
+		// }, 400);
+	// }
 }
 
 
 /* playback next track request
 ==========================================================================================================*/
 function myVideoNextRequest(){
-	writeLog("myVideoNextRequest called");
+	//writeLog("myVideoNextRequest called");
+
+	clearInterval(intervalPlaytime);
 
 	$('#myVideoName').html('');
 	$('#myVideoStatus').html('');
-
-	clearInterval(intervalPlaytime);
 
 	if (!waitingWS)
 	{
@@ -828,7 +841,7 @@ function myVideoNextRequest(){
 			{
 				while (recentlyPlayed.indexOf(nextVideoTrack) !== -1 || nextVideoTrack === currentVideoTrack)
 				{
-					nextVideoTrack = Math.floor(Math.random() * totalVideos);
+					nextVideoTrack = Math.floor(Math.random() * (totalVideos+1));
 				}
 			}
 			else
@@ -843,12 +856,19 @@ function myVideoNextRequest(){
 
 		localStorage.setItem('videoplayer.recentlyplayed', JSON.stringify(recentlyPlayed));
 
-		writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
+		//writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
 		var nextVideoObject = $(".videoTrack:eq(" + nextVideoTrack + ")");
 
 		if(nextVideoObject.length !== 0)
 		{
+			try
+			{
 			wsVideo.send('x');
+			}
+			catch(e)
+			{
+				
+			}
 			myVideoWs('killall -9 gplay', false);
 			wsVideo.close();
 			wsVideo=null;
@@ -868,12 +888,12 @@ function myVideoNextRequest(){
 /* playback previous track request
 ==========================================================================================================*/
 function myVideoPreviousRequest(){
-	writeLog("myVideoPreviousRequest called");
+	//writeLog("myVideoPreviousRequest called");
+
+	clearInterval(intervalPlaytime);
 
 	$('#myVideoName').html('');
 	$('#myVideoStatus').html('');
-
-	clearInterval(intervalPlaytime);
 
 	var previousVideoTrack = recentlyPlayed.pop();
 
@@ -907,7 +927,7 @@ function myVideoPreviousRequest(){
 /* stop playback request / response
 ==========================================================================================================*/
 function myVideoStopRequest(){
-	writeLog("myVideoStopRequest called");
+	//writeLog("myVideoStopRequest called");
 
 	framework.common.setSbName("Video Player");
 
@@ -928,8 +948,6 @@ function myVideoStopRequest(){
 	$('#myVideoPausePlayBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPauseBtn.png)'});
 
 	SelectCurrentTrack();
-
-	//currentVideoTrack = null;
 
 	$('#myVideoPreviousBtn').css({'display' : 'none'});
 	$('#myVideoRW').css({'display' : 'none'});
@@ -962,7 +980,7 @@ function myVideoStopRequest(){
 /* Play/Pause playback request / response
 ==========================================================================================================*/
 function myVideoPausePlayRequest(){
-	writeLog("myVideoPausePlayRequest called");
+	//writeLog("myVideoPausePlayRequest called");
 
 	if (!waitingWS)
 	{
@@ -990,7 +1008,7 @@ function myVideoPausePlayRequest(){
 /* FF playback request / response
 ==========================================================================================================*/
 function myVideoFFRequest(){
-	writeLog("myVideoFFRequest called");
+	//writeLog("myVideoFFRequest called");
 
 	if (!waitingWS)
 	{
@@ -1006,7 +1024,7 @@ function myVideoFFRequest(){
 		}
 		
 		wsVideo.send('e 1 t' + CurrentVideoPlayTime);
-
+		wsVideo.send('h');
 		waitingWS = false;
 	}
 }
@@ -1014,7 +1032,7 @@ function myVideoFFRequest(){
 /* RW playback request / response
 ==========================================================================================================*/
 function myVideoRWRequest(){
-	writeLog("myVideoRWRequest called");
+	//writeLog("myVideoRWRequest called");
 
 	if (!waitingWS)
 	{
@@ -1028,7 +1046,7 @@ function myVideoRWRequest(){
 		}
 
 		wsVideo.send('e 1 t' + CurrentVideoPlayTime);
-
+		wsVideo.send('h');
 		waitingWS = false;
 	}
 }
@@ -1082,29 +1100,25 @@ function checkStatus(state)
 	{
 		res = res.substring(res.indexOf("Vol=") + 8, res.indexOf("Vol=") + 25); 
 		$('#myVideoStatus').html(res);
-		
-		var time;
-		
-		if (!TotalVideoTime)
+	}
+	else if (res.indexOf("fsl_player_play") !== -1)
+	{
+		if ((!PlayMusic) && (!FullScreen))
 		{
-			time = res.substring(9, 17);
-			time = time.split(":");
-			time = Number(time[0]*3600) + Number(time[1]*60) + Number(time[2].substring(0,2));
-		
-			TotalVideoTime = time;
+			wsVideo.send('z 50 64 700 367');
 		}
 		
-		time = res.substring(0, 8);
-		time = time.split(":");
-		time = Number(time[0]*3600) + Number(time[1]*60) + Number(time[2].substring(0,2));
-
-		CurrentVideoPlayTime = time;
-
-		if (CurrentVideoPlayTime === TotalVideoTime)
-		{
-			waitingNext = true;
-			myVideoNextRequest();
+		CurrentVideoPlayTime = 0;
+		startPlayTimeInterval();		
 	}
+	//else if (res.indexOf("ERR]") !== -1)
+	else if (res.indexOf("try to play failed") !== -1)
+		{
+		showMemErrorMessage(res);
+		}
+	else if (res.indexOf("fsl_player_stop") !== -1)
+		{
+			myVideoNextRequest();
 	}
 	else if ((!metadataTitle) && (res.indexOf("title: ") !== -1))
 	{		
@@ -1131,18 +1145,30 @@ function checkStatus(state)
 		metadataComposer = res.substring(10);
 		DisplayMetadata();
 	}
-	else if (res.indexOf("track number: ") !== -1)
+	else if ((!metadataTrackNumber) && (res.indexOf("track number: ") !== -1))
 	{
 		metadataTrackNumber = res.substring(13);
 		DisplayMetadata();
 	}
-	else if (res.indexOf("ERR]") !== -1)
+	else if ((!metadataGenre) && (res.indexOf("genre: ") !== -1))
 	{
-		showMemErrorMessage(res);
+		metadataGenre = res.substring(7);
+		DisplayMetadata();
 	}
-	else if (res.indexOf("fsl_player_stop") !== -1)
+	else if ((PlayMusic) && (!metadataAudioCodec) && (res.indexOf("audio codec: ") !== -1))
 	{
-		myVideoNextRequest();
+		metadataAudioCodec = res.substring(13);
+		DisplayMetadata();
+	}
+	else if ((!metadataComment) && (res.indexOf("comment: ") !== -1))
+	{
+		metadataComment = res.substring(9);
+		DisplayMetadata();
+	}
+	else if ((!TotalVideoTime) && ((res.indexOf("Duration: ") !== -1) || (res.indexOf("Duration  : ") !== -1)))
+	{
+		res = res.split(":");
+		TotalVideoTime = Number(res[1]*3600) + Number(res[2]*60) + Number(res[3].substring(0,2));	
 	}
 }
 
@@ -1151,31 +1177,46 @@ function checkStatus(state)
 ============================================================================================= */
 function DisplayMetadata()
 {
-	var txt = "";
+	var txt = "<table>";
 	if (metadataTitle)
 	{
-		txt += '<br>Title: ' + metadataTitle;
+		txt += '<tr><td>Title</td><td>' + metadataTitle + '</td></tr>';
 	}
 	if (metadataArtist)
 	{
-		txt += '<br>Artist: ' + metadataArtist;
+		txt += '<tr><td>Artist</td><td>' + metadataArtist + '</td></tr>';
 	}
 	if (metadataAlbumArtist)
 	{
-		txt += '<br>Album Artist: ' + metadataAlbumArtist;
-	}
-	if (metadataAlbum)
-	{
-		txt += '<br>Album: ' + metadataAlbum;
+		txt += '<tr><td>Album Artist</td><td>' + metadataAlbumArtist + '</td></tr>';
 	}
 	if (metadataComposer)
 	{
-		txt += '<br>Composer: ' + metadataComposer;
+		txt += '<tr><td>Composer</td><td>' + metadataComposer + '</td></tr>';
+	}
+	if (metadataAlbum)
+	{
+		txt += '<tr><td>Album</td><td>' + metadataAlbum + '</td></tr>';
+	}
+	if (metadataGenre)
+	{
+		txt += '<tr><td>Genre</td><td>' + metadataGenre + '</td></tr>';
 	}
 	if (metadataTrackNumber)
 	{
-		txt += '<br>Track Number: ' + metadataTrackNumber;
+		txt += '<tr><td>Track Number</td><td>' + metadataTrackNumber + '</td></tr>';
 	}
+	if (metadataAudioCodec)
+	{
+		txt += '<tr><td>Audio Codec</td><td>' + metadataAudioCodec + '</td></tr>';
+	}
+	if (metadataComment)
+	{
+		txt += '<tr><td>Comment</td><td>' + metadataComment + '</td></tr>';
+	}
+	
+	txt += '</table>';
+	
 	$("#myMusicMetadata").html(txt);
 }
 
@@ -1184,7 +1225,7 @@ function DisplayMetadata()
 ============================================================================================= */
 function SelectCurrentTrack()
 {
-	writeLog('SelectCurrentTrack called');
+	//writeLog('SelectCurrentTrack called');
 
 	$(".videoTrack").removeClass(vpColorClass);
 	if ((currentVideoTrack === null) || (currentVideoTrack > totalVideos -1))
@@ -1232,6 +1273,11 @@ function startPlayTimeInterval()
 {
 	intervalPlaytime = setInterval(function (){
 		wsVideo.send('h');
+		
+		if (!VideoPaused)
+		{
+			CurrentVideoPlayTime++;			
+		}
 	}, 1000);
 }
 
@@ -1240,7 +1286,7 @@ function startPlayTimeInterval()
 ============================================================================================= */
 function handleCommander(eventID)
 {
-	writeLog('handleCommander - ' + eventID);
+	//writeLog('handleCommander - ' + eventID);
 
 	switch(eventID) {
 
@@ -1475,13 +1521,15 @@ function myVideoWs(action, waitMessage){
 	var ws = new WebSocket('ws://127.0.0.1:9998/');
 
 	ws.onmessage = function(event){
-		var res = event.data.split('#');
+		var res = event.data.trim();
 
 		ws.close();
 		ws=null;
-		switch(res[0]){
-			case 'playback-list':	myVideoListResponse(res[1]);
-			break;
+		
+		if (res.indexOf('playback-list') !== -1)
+		{
+			res = event.data.split('#');
+			myVideoListResponse(res[1]);	
 		}
 
 	};
