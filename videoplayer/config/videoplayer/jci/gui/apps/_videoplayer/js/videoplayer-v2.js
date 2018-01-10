@@ -80,7 +80,7 @@ var waitingForClose=false;
 var totalVideos = 0;
 var intervalVideoPlayer;
 var VideoPaused = false;
-var CurrentVideoPlayTime = -5; //The gplay delays ~5s to start
+var CurrentVideoPlayTime = null; //The gplay delays ~5s to start
 var TotalVideoTime = null;
 var intervalPlaytime;
 var waitingNext = false;
@@ -756,7 +756,7 @@ function myVideoStartRequest(obj){
 		//}
 
 		//writeLog(src);
-		CurrentVideoPlayTime = -5;
+		CurrentVideoPlayTime = null;
 		
 		wsVideo = new WebSocket('ws://127.0.0.1:9998/');
 		wsVideo.onopen = function(){
@@ -994,7 +994,7 @@ function myVideoPausePlayRequest(){
 function myVideoFFRequest(){
 	//writeLog("myVideoFFRequest called");
 
-	if (!waitingWS)
+	if ((!waitingWS) && (CurrentVideoPlayTime))
 	{
 		waitingWS = true;
 		
@@ -1018,7 +1018,7 @@ function myVideoFFRequest(){
 function myVideoRWRequest(){
 	//writeLog("myVideoRWRequest called");
 
-	if (!waitingWS)
+	if ((!waitingWS) && (CurrentVideoPlayTime))
 	{
 		waitingWS = true;
 		CurrentVideoPlayTime = CurrentVideoPlayTime - 10;
