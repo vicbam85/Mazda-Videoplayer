@@ -51,6 +51,7 @@
  *		 Delete the gstreamer registry on start in order to fix the plugin repository (Resets to the one without the codecs at car restart)
  * v3.3 Fixes the unicode list retrieve and removes the "only unicode" method
  *		Now it takes the time from gplay app
+ *		Adds the flac codec to the gstreamer libs
  *		It has the option to play flac files (from the Music folder un the usb stick). More formats will be supported (They need to be tested)
  *		It shows the metadata of the files when playing music
  * TODO:
@@ -78,7 +79,7 @@ var waitingForClose=false;
 var totalVideos = 0;
 var intervalVideoPlayer;
 var VideoPaused = false;
-var CurrentVideoPlayTime = -5; //The gplay delays ~5s to start
+var CurrentVideoPlayTime = null;
 var TotalVideoTime = null;
 var intervalPlaytime;
 var waitingNext = false;
@@ -111,24 +112,6 @@ $(document).ready(function(){
 	try
 	{
 		$('#SbSpeedo').fadeOut();
-		/*
-		*  Trick: When opening videoplayer, press the music button right away.
-		*  While switching contexts the pause command will execute and music will be paused.
-		*  Then switch back to videoplayer and play a video.
-		*  This is a temporary solution untill a better one is discovered.
-		*/
-		var btAudioApp = framework.getAppInstance("btaudio");
-		if(typeof btAudioApp === "undefined") {
-			framework.sendEventToMmui('system','SelectBTAudio');
-			setTimeout(function(){
-				framework.sendEventToMmui('usbaudio','Global.Pause');
-				framework.sendEventToMmui('common','Global.GoBack');
-			}, 1200);
-		}
-		framework.sendEventToMmui('usbaudio','Global.Pause');
-
-		//framework.sendEventToMmui(usbaudioApp.uiaId, "Global.Pause");
-		//usbaudioApp._changePlayButton("pause");
     if (localStorage.getItem('videoplayer.colortheme')) {
       var colorPick = JSON.parse(localStorage.getItem('videoplayer.colortheme')) || null;
       if(utility.toType(colorPick) === "array") {
@@ -397,6 +380,7 @@ $(document).ready(function(){
 		var res = "test";
 		showMemErrorMessage(res);
 		$('.memErrorMessage').delay(1500).fadeOut(1000);
+		$(this).blur();
 	});
 
   /* Video information / options panel
@@ -654,8 +638,9 @@ function myVideoListScrollUpDown(action){
 ==========================================================================================================*/
 function myVideoStartRequest(obj){
 	//writeLog("myVideoStartRequest called");
-	
-	 $('#videoInfoPanel').removeClass('showInfo');
+
+  $('#videoInfoPanel').removeClass('showInfo');
+  musicIsPaused = true;
 	optionsPanelOpen = false;
 	currentVideoTrack = $(".videoTrack").index(obj);
 	var videoToPlay = obj.attr('video-data');
@@ -741,6 +726,7 @@ function myVideoStartRequest(obj){
 		if (statusbarTitleVideo) {
 			framework.common.setSbName($('#myVideoName').text());
 		}
+    framework.common.startTimedSbn(this.uiaId, "SbnVPTest", "typeE", {sbnStyle : "Style02",imagePath1 : 'apps/_videoplayer/templates/VideoPlayer/images/icon.png', text1Id : this.uiaId, text2: $('#myVideoName').text()});
 
 		//Screen size 800w*480h
 		//Small screen player 700w*367h
@@ -754,6 +740,8 @@ function myVideoStartRequest(obj){
 		} */
 
 		//src += '" --audio-sink=alsasink ';
+		// Trying to asign to specific alsa device or card to take audio focus
+		//src += '" --audio-sink="alsasink device=entertainmentBtsa" ';
 		src += '"' + videoToPlay + '" 2>&1 ';
 
 		//if (enableLog)
@@ -763,7 +751,7 @@ function myVideoStartRequest(obj){
 
 		//writeLog(src);
 
-		CurrentVideoPlayTime = -5;
+		CurrentVideoPlayTime = null;
 
 		wsVideo = new WebSocket('ws://127.0.0.1:9998/');
 
@@ -928,8 +916,9 @@ function myVideoPreviousRequest(){
 ==========================================================================================================*/
 function myVideoStopRequest(){
 	//writeLog("myVideoStopRequest called");
-
-	framework.common.setSbName("Video Player");
+  if (statusbarTitleVideo && framework.getCurrentApp() === "_videoplayer") {
+    framework.common.setSbName("Video Player");
+  }
 
 	if (wsVideo !== null)
 	{
@@ -982,7 +971,7 @@ function myVideoStopRequest(){
 function myVideoPausePlayRequest(){
 	//writeLog("myVideoPausePlayRequest called");
 
-	if (!waitingWS)
+	if ((!waitingWS) && (CurrentVideoPlayTime))
 	{
 		waitingWS = true;
 
@@ -1010,7 +999,7 @@ function myVideoPausePlayRequest(){
 function myVideoFFRequest(){
 	//writeLog("myVideoFFRequest called");
 
-	if (!waitingWS)
+	if ((!waitingWS) && (CurrentVideoPlayTime))
 	{
 		waitingWS = true;
 
@@ -1094,82 +1083,81 @@ function writeLog(logText){
 ============================================================================================= */
 function checkStatus(state)
 {
-	var res = state.trim();
+  var res = state.trim();
 
-	if (res.indexOf("Playing  ]") !== -1)
-	{
-		res = res.substring(res.indexOf("Vol=") + 8, res.indexOf("Vol=") + 25); 
-		$('#myVideoStatus').html(res);
-	}
-	else if (res.indexOf("fsl_player_play") !== -1)
-	{
-		if ((!PlayMusic) && (!FullScreen))
-		{
-			wsVideo.send('z 50 64 700 367');
-		}
-		
-		CurrentVideoPlayTime = 0;
-		startPlayTimeInterval();		
-	}
-	//else if (res.indexOf("ERR]") !== -1)
-	else if (res.indexOf("try to play failed") !== -1)
-		{
-		showMemErrorMessage(res);
-		}
-	else if (res.indexOf("fsl_player_stop") !== -1)
-		{
-			myVideoNextRequest();
-	}
-	else if ((!metadataTitle) && (res.indexOf("title: ") !== -1))
-	{		
-		metadataTitle = res.substring(7);
-		DisplayMetadata();
-	}
-	else if ((!metadataAlbumArtist) && (res.indexOf("album artist: ") !== -1))
-	{
-		metadataAlbumArtist = res.substring(14);
-		DisplayMetadata();
-	}
-	else if ((!metadataAlbum) && (res.indexOf("album: ") !== -1))
-	{
-		metadataAlbum = res.substring(7);
-		DisplayMetadata();
-	}
-	else if ((!metadataArtist) && (res.indexOf("artist: ") !== -1))
-	{
-		metadataArtist = res.substring(8);
-		DisplayMetadata();
-	}
-	else if ((!metadataComposer) && (res.indexOf("composer: ") !== -1))
-	{
-		metadataComposer = res.substring(10);
-		DisplayMetadata();
-	}
-	else if ((!metadataTrackNumber) && (res.indexOf("track number: ") !== -1))
-	{
-		metadataTrackNumber = res.substring(13);
-		DisplayMetadata();
-	}
-	else if ((!metadataGenre) && (res.indexOf("genre: ") !== -1))
-	{
-		metadataGenre = res.substring(7);
-		DisplayMetadata();
-	}
-	else if ((PlayMusic) && (!metadataAudioCodec) && (res.indexOf("audio codec: ") !== -1))
-	{
-		metadataAudioCodec = res.substring(13);
-		DisplayMetadata();
-	}
-	else if ((!metadataComment) && (res.indexOf("comment: ") !== -1))
-	{
-		metadataComment = res.substring(9);
-		DisplayMetadata();
-	}
-	else if ((!TotalVideoTime) && ((res.indexOf("Duration: ") !== -1) || (res.indexOf("Duration  : ") !== -1)))
-	{
-		res = res.split(":");
-		TotalVideoTime = Number(res[1]*3600) + Number(res[2]*60) + Number(res[3].substring(0,2));	
-	}
+  if (res.indexOf("Playing  ]") !== -1)
+  {
+    res = res.substring(res.indexOf("Vol=") + 8, res.indexOf("Vol=") + 25);
+    $('#myVideoStatus').html(res);
+  }
+  else if (res.indexOf("fsl_player_play") !== -1)
+  {
+    if ((!PlayMusic) && (!FullScreen))
+    {
+      wsVideo.send('z 50 64 700 367');
+    }
+
+    CurrentVideoPlayTime = 0;
+    startPlayTimeInterval();
+  }
+  else if (res.indexOf("try to play failed") !== -1 || res.indexOf("ERR]") !== -1)
+  {
+    showMemErrorMessage(res);
+  }
+  else if (res.indexOf("fsl_player_stop") !== -1)
+  {
+    myVideoNextRequest();
+  }
+  else if ((!metadataTitle) && (res.indexOf("title: ") !== -1))
+  {
+    metadataTitle = res.substring(7);
+    DisplayMetadata();
+  }
+  else if ((!metadataAlbumArtist) && (res.indexOf("album artist: ") !== -1))
+  {
+    metadataAlbumArtist = res.substring(14);
+    DisplayMetadata();
+  }
+  else if ((!metadataAlbum) && (res.indexOf("album: ") !== -1))
+  {
+    metadataAlbum = res.substring(7);
+    DisplayMetadata();
+  }
+  else if ((!metadataArtist) && (res.indexOf("artist: ") !== -1))
+  {
+    metadataArtist = res.substring(8);
+    DisplayMetadata();
+  }
+  else if ((!metadataComposer) && (res.indexOf("composer: ") !== -1))
+  {
+    metadataComposer = res.substring(10);
+    DisplayMetadata();
+  }
+  else if ((!metadataTrackNumber) && (res.indexOf("track number: ") !== -1))
+  {
+    metadataTrackNumber = res.substring(13);
+    DisplayMetadata();
+  }
+  else if ((!metadataGenre) && (res.indexOf("genre: ") !== -1))
+  {
+    metadataGenre = res.substring(7);
+    DisplayMetadata();
+  }
+  else if ((PlayMusic) && (!metadataAudioCodec) && (res.indexOf("audio codec: ") !== -1))
+  {
+    metadataAudioCodec = res.substring(13);
+    DisplayMetadata();
+  }
+  else if ((!metadataComment) && (res.indexOf("comment: ") !== -1))
+  {
+    metadataComment = res.substring(9);
+    DisplayMetadata();
+  }
+  else if ((!TotalVideoTime) && ((res.indexOf("Duration: ") !== -1) || (res.indexOf("Duration  : ") !== -1)))
+  {
+    res = res.split(":");
+    TotalVideoTime = Number(res[1]*3600) + Number(res[2]*60) + Number(res[3].substring(0,2));
+  }
 }
 
 
@@ -1250,11 +1238,10 @@ function SelectCurrentTrack()
 
 function showMemErrorMessage(res){
 	$('#videoPlayControl').hide();
-	$('#myVideoNextBtn').css({'display' : ''});
 	$('#myVideoName').css({'font-size':'16px','padding':'2px'}).html("Memory Error.- " + res);
-	$('#myVideoContainer').append('<div id="memErrorMessage" class="memErrorMessage"><b>***************&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MEMORY ERROR.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;***************</b><br><br>TRY PLAYING THE NEXT VIDEO<br>TO AVOID THIS ERROR REMOVE NAV SD CARD BEFORE PLAYING VIDEOS.<br><br>IF ERRORS CONTINUE TAP THIS MESSAGE TO REBOOT<br><br>BEST VIDEO FORMAT TO MINIMIZE MEMORY ERRORS: <br><div style="font-size:30px;font-weight:bold;">MP4 H264 AAC 360P</div><br><ul></ul></div>');
-	//$('#myVideoInfo').css({'visibility' : 'visible'});
+	$('#myVideoContainer').append('<div id="memErrorMessage" class="memErrorMessage"><b>***************&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MEMORY ERROR.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;***************</b><br>'+res.substring(res.indexOf("[ERR]"))+'<br>TRY PLAYING THE NEXT VIDEO<br>TO AVOID THIS ERROR REMOVE NAV SD CARD BEFORE PLAYING VIDEOS.<br><br>IF ERRORS CONTINUE TAP THIS MESSAGE TO REBOOT<br><br>BEST VIDEO FORMAT TO MINIMIZE MEMORY ERRORS: <br><div style="font-size:30px;font-weight:bold;">MP4 H264 AAC 360P</div><br><ul></ul></div>');
 	if(res !== "test"){
+		$('#myVideoNextBtn').css({'display' : ''});
 		$('.memErrorMessage').click(function(){
 			$('.memErrorMessage').html("<div style='font-size:40px'>REBOOTING</div>");
 			myRebootSystem();
@@ -1360,7 +1347,7 @@ function handleCommander(eventID)
 		{
       $('#colorThemes a').css({'background':''});
 			$(".panelOptions a").removeClass(vpColorClass);
-			(selectedItem < 0) ? selectedItem = 9 : selectedItem--;
+			(selectedItem < 0) ? selectedItem = 8 : selectedItem--;
 			$(".panelOptions a").eq(selectedItem).addClass(vpColorClass);
 		}
 		else if (currentVideoTrack !== null)
@@ -1400,7 +1387,7 @@ function handleCommander(eventID)
 		{
       $('#colorThemes a').css({'background':''});
 			$(".panelOptions a").removeClass(vpColorClass);
-			(selectedItem > 9) ? selectedItem = 0 : selectedItem++;
+			(selectedItem > 8) ? selectedItem = 0 : selectedItem++;
 			$(".panelOptions a").eq(selectedItem).addClass(vpColorClass);
 		}
 		else if (currentVideoTrack !== null)

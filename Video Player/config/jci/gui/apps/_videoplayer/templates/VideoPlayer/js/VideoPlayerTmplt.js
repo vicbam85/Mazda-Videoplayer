@@ -111,11 +111,9 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties)
 	'</ul></div></aside></div>'+
   '<script src="addon-common/jquery.min.js" type="text/javascript"></script>'+
   '<script src="apps/_videoplayer/js/videoplayer-v2.js" type="text/javascript"></script>';
-  /*if (!window.jQuery) {
-    utility.loadScript("addon-common/jquery.min.js", {}, function(){
-      $.getScript("apps/_videoplayer/js/videoplayer-v2.js");
-    });
-  }*/
+  /* AIO-remove
+  $.getScript("apps/_videoplayer/js/videoplayer-v2.js");
+  AIO-remove */
 }
 
 /*
