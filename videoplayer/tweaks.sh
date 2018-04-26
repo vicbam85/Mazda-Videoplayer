@@ -78,6 +78,11 @@ add_app_json()
 		echo "]" >> /jci/opera/opera_dir/userjs/additionalApps.json
 		chmod 755 /jci/opera/opera_dir/userjs/additionalApps.json
 	fi
+  if [ -e /jci/opera/opera_dir/userjs/nativeApps.js ]
+  then
+    echo "additionalApps = $(cat /jci/opera/opera_dir/userjs/additionalApps.json)" > /jci/opera/opera_dir/userjs/nativeApps.js
+    log_message "Updated nativeApps.js"
+  fi
 }
 
 
@@ -159,10 +164,9 @@ if [ -e /jci/opera/opera_dir/userjs/fps.js ]
 fi
 
 
-
 #######################################################################
 # Video_Player by many many people
-# V3.0 - Mod by Trezdog44
+# V3.5 - Mods by vic_bam85 & Trezdog44
 #######################################################################
 
 show_message "Video Player Installation"
@@ -174,17 +178,18 @@ rm -fr /jci/gui/apps/_videoplayer/
 
 
 #Copies the additionalApps.js
-if [ ! -e /jci/opera/opera_dir/userjs/additionalApps.js ]
+if [ ! -e /jci/casdk/casdk.aio ]
 then
-	cp -a ${MYDIR}/config/jci/opera/opera_dir/userjs/additionalApps.js /jci/opera/opera_dir/userjs/
+	cp -a ${MYDIR}/config/videoplayer/jci/opera/opera_dir/userjs/additionalApps.js /jci/opera/opera_dir/userjs/
 	chmod 755 /jci/opera/opera_dir/userjs/additionalApps.js
 fi
-
+cp -a ${MYDIR}/config/videoplayer/jci/opera/opera_dir/userjs/aio.js /jci/opera/opera_dir/userjs/
+chmod 755 /jci/opera/opera_dir/userjs/aio.js
 
 #It creates its own json file from scratch if the file does not exists
 if [ ! -e /jci/opera/opera_dir/userjs/additionalApps.json ]
 then
-	#cp -a ${MYDIR}/config/jci/opera/opera_dir/userjs/additionalApps.json /jci/opera/opera_dir/userjs/
+	#cp -a ${MYDIR}/config/videoplayer/jci/opera/opera_dir/userjs/additionalApps.json /jci/opera/opera_dir/userjs/
 	echo "[" > /jci/opera/opera_dir/userjs/additionalApps.json
 	echo "]" >> /jci/opera/opera_dir/userjs/additionalApps.json
 	chmod 755 /jci/opera/opera_dir/userjs/additionalApps.json
@@ -192,7 +197,7 @@ fi
 
 
 #copies the content of the addon-common folder
-cp -a ${MYDIR}/config/jci/gui/addon-common/ /jci/gui/
+cp -a ${MYDIR}/config/videoplayer/jci/gui/addon-common/ /jci/gui/
 chmod 755 -R /jci/gui/addon-common/
 
 
@@ -225,7 +230,7 @@ add_app_json "_videoplayer" "Video Player"
 
 log_message "Copy files to jci/gui/apps"
 
-cp -a ${MYDIR}/config/jci/gui/apps/* /jci/gui/apps/
+cp -a ${MYDIR}/config/videoplayer/jci/gui/apps/* /jci/gui/apps/
 chmod 755 -R /jci/gui/apps/_videoplayer/
 
 
