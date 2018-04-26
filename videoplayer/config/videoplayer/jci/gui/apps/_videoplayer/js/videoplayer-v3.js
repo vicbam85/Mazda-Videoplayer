@@ -146,7 +146,7 @@
 
  var wsVideo = null;
  var videoTitleFilter = function(title) {
-   return title.replace(/\.(mp3|mp4|avi|wmv|flv|3gp|flac)$/g, '').replace(/\_/g, '&nbsp;');
+   return title.replace(/\.(mp3|mp4|avi|wmv|flv|3gp|flac)$/g, '').replace(/\_/g, ' ');
  }
 
  if (!window.jQuery) {
