@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Video Player v3.2 installer
+# Video Player v3.5 installer
 
 get_cmu_sw_version()
 {
