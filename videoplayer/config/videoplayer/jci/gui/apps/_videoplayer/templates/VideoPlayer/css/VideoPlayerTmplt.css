@@ -9,15 +9,14 @@
   top: 0px;
 }
 .VPControlOverlay.blackOut {
-  z-index: 99;
   max-height:480px;
+  z-index: 99;
 }
-.VPControlOverlay .StatusBarCtrlAppName {
-  display: none;
+.VPControlOverlay:not(.blackOut) .StatusBarCtrlAppName {
+  display:none!important;
 }
 .VPControlOverlay.blackOut .StatusBarCtrlAppName {
   text-align: center;
-  display: block;
   width: 100%;
   left: 0;
 }
@@ -31,17 +30,17 @@
   bottom: 0;
 }
 .VPControlOverlay.blackOut.wideVideo #blackOutVideoStatus div {
-  display: inline;
   padding-right: 3px;
+  display: inline;
 }
 .VPControlOverlay.blackOut.wideVideo #blackOutVideoStatus {
-  height: 10px;
   padding: 10px;
+  height: 10px;
 }
 .VPControlOverlay ul {
   list-style-type: none;
-  margin: 0;
   padding: 0;
+  margin: 0;
 }
 .VPControlOverlay ul li {
   float: left;

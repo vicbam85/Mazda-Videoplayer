@@ -67,14 +67,14 @@
   *   Shows gplay error in error message
   *   After hitting an error will make up to 3 attempts to re-start the video in 10 second intervals
   *   Video Resumes where it left off when shifting out of reverse
-  *   Added to options panel "Resume Play" - when checked:
+  *   Added to option "Resume Play" - when checked:
   *   - Resumes the video where you left off if it was interrupted or the app was exited while playing.
-  *   - Reloads saved video list on app reopen and resume (reloads if switch to music or press reload button)
+  *   - Saves video list to reopen and resume quickly (reloads if switch to music or press reload button)
   *   - If the video is stopped and you are in the list when you exit you will return to the list when reopened.
-  *   Added "Black Out Background" option - Will overlay all other GIU elements leaving only the video and solid black background
+  *   Added "Black Out Background" option - Will overlay all other GUI layers leaving only the video and solid black background
   *   - Video Title will show centered above video and time below in the lower left corner for about 5 seconds and fade out
   *   - If "Title to Statusbar" is checked, title and time will stay visible (but can be toggled with the multicontroller).
-  *   - This is ON TOP of all layers including the statusbar and bottom controls while the video player background is ON THE BOTTOM all the other layers
+  *   - This is ON TOP of all layers including the statusbar and bottom controls while the video player background is ON THE BOTTOM of all the other layers
   *   - Pausing the video temporarily hides the overlay
   * TODO:
   *		Change the audio input and stop the music player. If just mutes the player the system lags when playing
@@ -179,7 +179,7 @@
 
    $('#myVideoFullScrBtn').css('background-image', 'url(apps/_videoplayer/templates/VideoPlayer/images/myFullScreen' + FullScreen + '.png)');
    $('#myVideoRepeatBtn').css('background-image', 'url(apps/_videoplayer/templates/VideoPlayer/images/myRepeat' + Repeat + '.png)');
-   $('#myVideoShuffleBtn').css('background-image', (Shuffle ? 'url(apps/_videoplayer/templates/VideoPlayer/images/myShuffle.png)' : boxUncheck));
+   $('#myVideoShuffleBtn').css('background-image', 'url(apps/_videoplayer/templates/VideoPlayer/images/myShuffle' + (Shuffle ? '' : '0') + '.png)');
    setCheckBoxes('#myResumePlay', ResumePlay);
    setCheckBoxes('#myPlayMusicBtn', PlayMusic);
 
@@ -328,7 +328,7 @@
    ==================================================================================*/
    $('#myVideoShuffleBtn, #videoShuffleBtn').click(function() {
      Shuffle = !Shuffle;
-     $('#myVideoShuffleBtn').css({ 'background-image': (Shuffle ? 'url(apps/_videoplayer/templates/VideoPlayer/images/myShuffle.png)' : boxUncheck) });
+     $('#myVideoShuffleBtn').css('background-image', 'url(apps/_videoplayer/templates/VideoPlayer/images/myShuffle' + (Shuffle ? '' : '0') + '.png)');
      recentlyPlayed = [];
      AIO_SBN('Shuffle: ' + (Shuffle ? 'ON' : 'OFF'), videoPlayerIcon);
      localStorage.setItem('videoplayer.shuffle', JSON.stringify(Shuffle));
@@ -773,7 +773,7 @@
 
    clearInterval(intervalPlaytime);
 
-   $('#myVideoStatus, #blackOutVideoStatus, #myVideoName').html('');
+   $('#myVideoStatus, #blackOutVideoStatus, #myVideoName, .VPCtrlAppName').html('');
 
    if (!waitingWS) {
      waitingWS = true;
@@ -839,7 +839,7 @@
 
    clearInterval(intervalPlaytime);
 
-   $('#myVideoStatus, #blackOutVideoStatus, #myVideoName').html('');
+   $('#myVideoStatus, #blackOutVideoStatus, #myVideoName, .VPCtrlAppName').html('');
 
    var previousVideoTrack;
    if (!(previousVideoTrack = recentlyPlayed.pop())) {
@@ -892,7 +892,8 @@
 
    $('.memErrorMessage').remove();
 
-   $('#myVideoStatus, #blackOutVideoStatus, #myVideoName').html('');
+   $('#myVideoStatus, #blackOutVideoStatus, #myVideoName, .VPCtrlAppName').html('');
+   $('.VPControlOverlay').removeClass('blackOut');
    VideoPaused = false;
    $('#myVideoPausePlayBtn').css({ 'background-image': 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPauseBtn.png)' });
 
@@ -1159,7 +1160,7 @@
  function SelectCurrentTrack() {
    $(".videoTrack").removeClass(vpColorClass);
    if ((currentVideoTrack === null) || (currentVideoTrack > totalVideos - 1)) {
-     currentVideoTrack = 0;
+     currentVideoTrack = player.currentVideoTrack || 0;
    }
 
    selectedItem = currentVideoTrack;
