@@ -121,7 +121,9 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties) {
     StartVideoPlayerApp();
   }, 700);
 }
-
+if (typeof player === "undefined") {
+  player = framework.getAppInstance("_videoplayer");
+}
 /*
  * =========================
  * Standard Template API functions

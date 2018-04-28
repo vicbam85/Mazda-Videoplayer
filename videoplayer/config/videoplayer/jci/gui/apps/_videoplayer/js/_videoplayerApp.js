@@ -79,7 +79,7 @@ _videoplayerApp.prototype._noLongerDisplayed = function() {
   CloseVideoFrame();
 
   // If we are in reverse then save CurrentVideoPlayTime to resume the video where we left of
-  if ((framework.getCurrentApp() === 'backupparking' || (ResumePlay && CurrentVideoPlayTime > 0)) && this.currentVideoTrack !== null) {
+  if (framework.getCurrentApp() === 'backupparking' || (ResumePlay && CurrentVideoPlayTime > 0)) {
     this.resumePlay = CurrentVideoPlayTime;
     localStorage.setItem('videoplayer.resume', JSON.stringify(CurrentVideoPlayTime));
     CurrentVideoPlayTime = null;

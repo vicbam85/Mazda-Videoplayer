@@ -257,8 +257,8 @@
    /* stop playback
    ==================================================================================*/
    $('#myVideoStopBtn, #videoStopBtn').click(function() {
-     player.currentVideoTrack = null;
      player.resumePlay = 0;
+     currentVideoTrack = null;
      CurrentVideoPlayTime = null;
      myVideoStopRequest();
    });
@@ -649,7 +649,7 @@
    $('#myVideoName').css({ 'display': 'block' });
    $('#myVideoStatus').css({ 'display': 'block' });
    $('.memErrorMessage').remove();
-   $('#widgetContent').prepend($('</div>').addClass('recentPlayedItem').text(currentVideoTrack + ": " + videoToPlay));
+   //$('#widgetContent').prepend($('</div>').addClass('recentPlayedItem').text(currentVideoTrack + ": " + videoToPlay));
    $('.VPControlOverlay').removeClass('blackOut');
 
    metadataAlbum = null;
@@ -1203,6 +1203,7 @@
          myRebootSystem();
        });
        if (retryAttempts < 3) {
+         clearTimeout(retryPlayback);
          retryPlayback = setTimeout(function() {
            retryAttempts++;
            if (framework.getCurrentApp() === "_videoplayer" && currentVideoTrack !== null && !CurrentVideoPlayTime) {
