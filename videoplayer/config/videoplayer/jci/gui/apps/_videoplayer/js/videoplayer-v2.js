@@ -55,12 +55,15 @@
  *		It has the option to play flac and mp3 files (from the Music folder un the usb stick). More formats will be supported (They need to be tested)
  *		It shows the metadata of the files when playing music
  *		Disabled the log functions as they are not needed now
+ * v3.4 Has aspect ratio and 2 fullscreen modes. One of them preserving the video size ratio
+ *		Doesn't show the FullScreen button when playing music
+ *		Fixed a problem while selecting the options with the commander
  * TODO:
  *		Get detailed errors from gplay
  *		Change the audio input and stop the music player. If just mutes the player the system lags when playing
  *		Complete the plugins in the cmu in order to allow more file types (mkv / ogg / ac3)
  */
-//var enableLog = false;
+
 var vpColor = "Red";
 var vphColor = "darkred";
 var vpColorClass = "selectedItem" + vpColor;
@@ -69,7 +72,7 @@ var vpColorClass = "selectedItem" + vpColor;
 var folderPath='/tmp/mnt';
 var currentVideoTrack = JSON.parse(localStorage.getItem('videoplayer.currentvideo')) || null;
 var Repeat = JSON.parse(localStorage.getItem('videoplayer.repeat')) || false;
-var FullScreen = JSON.parse(localStorage.getItem('videoplayer.fullscreen')) || false;
+var FullScreen = JSON.parse(localStorage.getItem('videoplayer.fullscreen')) || 0; //0 no FS - 1 FS - 2 Stretch
 var Shuffle = JSON.parse(localStorage.getItem('videoplayer.shuffle')) || false;
 var RepeatAll = JSON.parse(localStorage.getItem('videoplayer.repeatall')) || false;
 var PlayMusic = JSON.parse(localStorage.getItem('videoplayer.playmusic')) || false;
@@ -80,16 +83,16 @@ var waitingForClose=false;
 var totalVideos = 0;
 var intervalVideoPlayer;
 var VideoPaused = false;
-var CurrentVideoPlayTime = null; //The gplay delays ~5s to start
+var CurrentVideoPlayTime = null;
 var TotalVideoTime = null;
 var intervalPlaytime;
 var waitingNext = false;
 var selectedItem = 0;
-var recentlyPlayed = [];
+var recentlyPlayed = JSON.parse(localStorage.getItem('videoplayer.recentlyplayed')) || [];
 var statusbarTitleVideo = JSON.parse(localStorage.getItem('videoplayer.statusbartitle')) || false;
 var selectedOptionItem = -1; //6 ??
+//var stretchVideo = false;
 
-var logFile = "/jci/gui/apps/_videoplayer/videoplayer_log.txt";
 var boxChecked = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoCheckedBox.png)';
 var boxUncheck = 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoUncheckBox.png)';
 var optionsPanelOpen = false;
@@ -103,6 +106,9 @@ var metadataTrackNumber;
 var metadataGenre;
 var metadataComment;
 var metadataAudioCodec;
+var metadataVideoRatio;
+var videoHeight = null;
+var videoWidth = null;
 
 var src = '';
 
@@ -111,49 +117,42 @@ var wsVideo = null;
 $(document).ready(function(){
 	try
 	{
+		//localStorage.clear();
+		
 		$('#SbSpeedo').fadeOut();
-		/*
-		*  Trick: When opening videoplayer, press the music button right away.
-		*  While switching contexts the pause command will execute and music will be paused.
-		*  Then switch back to videoplayer and play a video.
-		*  This is a temporary solution untill a better one is discovered.
-		*/
-		//var usbaudioApp = framework.getAppInstance("usbaudio");
-		//framework.sendEventToMmui(usbaudioApp.uiaId, "Global.Pause");
-		//usbaudioApp._changePlayButton("pause");
-	if (localStorage.getItem('videoplayer.colortheme')) {
-		var colorPick = JSON.parse(localStorage.getItem('videoplayer.colortheme')) || null;
-		if(utility.toType(colorPick) === "array") {
-		vpColor = colorPick[0].charAt(0).toUpperCase() + colorPick[0].slice(1);
-		vphColor = colorPick[1];
-		} else if(utility.toType(colorPick) === "string") {
-		vpColor = colorPick.charAt(0).toUpperCase() + colorPick.slice(1);
-		vphColor = colorPick;
+		if (localStorage.getItem('videoplayer.colortheme')) {
+			var colorPick = JSON.parse(localStorage.getItem('videoplayer.colortheme')) || null;
+			if(utility.toType(colorPick) === "array") {
+				vpColor = colorPick[0].charAt(0).toUpperCase() + colorPick[0].slice(1);
+				vphColor = colorPick[1];
+			} 
+			else if(utility.toType(colorPick) === "string")  {
+				vpColor = colorPick.charAt(0).toUpperCase() + colorPick.slice(1);
+				vphColor = colorPick;
+			}
+			vpColorClass = "selectedItem" + vpColor;
 		}
-		vpColorClass = "selectedItem" + vpColor;
-	}
-	if (JSON.parse(localStorage.getItem('videoplayer.background'))) {
-		$('#myVideoContainer').addClass('noBg');
-	}
+		if (JSON.parse(localStorage.getItem('videoplayer.background'))) {
+			$('#myVideoContainer').addClass('noBg');
+		}
 	}
 	catch(err)
 	{
 
 	}
-
-	setCheckBoxes('#myVideoFullScrBtn', FullScreen);
+	//setCheckBoxes('#myVideoFullScrBtn', FullScreen);
+	$('#myVideoFullScrBtn').css('background-image', 'url(apps/_videoplayer/templates/VideoPlayer/images/myFullScreen' + FullScreen + '.png)');
 	setCheckBoxes('#myVideoShuffleBtn', Shuffle);
 	setCheckBoxes('#myVideoRepeatBtn', Repeat);
 	setCheckBoxes('#myVideoRepeatAllBtn', RepeatAll);
 	setCheckBoxes('#myPlayMusicBtn', PlayMusic);
-
 	function setCheckBoxes(opId, checkIt) {
 		var check = (checkIt) ? boxChecked : boxUncheck;
 		$(opId).css({'background-image': check});
 	}
 	$('#colorThemes a').click(function(e){
 		var colorPick = $(this).html();
-		$('#colorThemes a').removeClass(vpColorClass);
+		$('#colorThemes a').css('background','').removeClass(vpColorClass);
 		vpColor = colorPick.charAt(0).toUpperCase() + colorPick.slice(1);
 		vphColor = $(this).attr('class');
 		vpColorClass = "selectedItem" + vpColor;
@@ -162,14 +161,9 @@ $(document).ready(function(){
 		localStorage.setItem('videoplayer.colortheme', JSON.stringify(themeColors));
 	});
 
-
-	// if (enableLog)
-	// {
-		// myVideoWs('mount -o rw,remount /; hwclock --hctosys; ', false); //enable-write - Change Date
-		// //writeLog("\n---------------------------------------------------------------------------------\napp start\nStart App Config\n====creating swap====");
-	// }
-
-	src = 'USBDRV=$(ls /mnt | grep sd); ' +
+	src = '';
+	
+	/* src += 'USBDRV=$(ls /mnt | grep sd); ' +
 
 		'for USB in $USBDRV; ' +
 		'do ' +
@@ -182,127 +176,120 @@ $(document).ready(function(){
 		'swapon ${SWAPFILE}; ' +
 		'break; ' +
 		'fi; ' +
-		'done; ';
+		'done; '; */
+	
+	//src += 'rm -f /tmp/root/.gstreamer-0.10/registry.arm.bin;'; //cleans the gstreamer registry
 
-	// if (enableLog)
-	// {
-		// src += 'cat /proc/swaps >> '+ logFile +'; ';
-	// }
-
-	src += 'rm -f /tmp/root/.gstreamer-0.10/registry.arm.bin;'; //cleans the gstreamer registry
-
-	src += 'gst-inspect-0.10 > /dev/null 2>&1; '; // Start gstreamer before starting videos
+	//src += 'gst-inspect-0.10 > /dev/null 2>&1; '; // Start gstreamer before starting videos
 
 	myVideoWs(src, false); //start-swap
 
 	/* reboot system
 	==================================================================================*/
 	$('#rebootBtnDiv').click(function(){
-		//writeLog("rebootBtn Clicked");
 		myRebootSystem();
 	});
 
 	/* retrieve video list
 	==================================================================================*/
 	$('#myVideoMovieBtn').click(function(){
-		//writeLog("myVideoMovieBtn Clicked");
 		myVideoListRequest();
 	});
 
 	/* scroll up video list
 	==================================================================================*/
 	$('#myVideoScrollUp').click(function(){
-		//writeLog("myVideoScrollUp Clicked");
 		myVideoListScrollUpDown('up');
 	});
 
 	/* scroll down video list
 	==================================================================================*/
 	$('#myVideoScrollDown').click(function(){
-		//writeLog("myVideoScrollDown Clicked");
 		myVideoListScrollUpDown('down');
 	});
 
 	/* play pause playback
 	==================================================================================*/
 	$('#myVideoPausePlayBtn').click(function(){
-		//writeLog("myVideoPausePlayBtn Clicked");
 		myVideoPausePlayRequest();
 	});
 	$('#videoPlayBtn').click(function(){
-		//writeLog("videoPlayBtn Clicked");
 		myVideoPausePlayRequest();
 	});
 
 	/* FullScreen playback
 	==================================================================================*/
 	$('#myVideoFullScrBtn').click(function(){
-		//writeLog("myVideoFullScrBtn Clicked");
-		if(FullScreen){
-			FullScreen = false;
-			$('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
+		if(FullScreen === 2){
+			FullScreen = 0;
+			//$('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
+		}
+		else if (FullScreen === 0)
+		{
+			FullScreen = 1;
+			//$('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
 		}
 		else {
-			FullScreen = true;
-			$('#myVideoFullScrBtn').css({'background-image' : boxChecked});
+			FullScreen = 2;
+			//$('#myVideoFullScrBtn').css({'background-image' : boxChecked});
 		}
-		localStorage.setItem('videoplayer.fullscreen', JSON.stringify(FullScreen));
+		$('#myVideoFullScrBtn').css('background-image', 'url(apps/_videoplayer/templates/VideoPlayer/images/myFullScreen' + FullScreen + '.png)');
+
+		try
+		{
+				localStorage.setItem('videoplayer.fullscreen', JSON.stringify(FullScreen));
+		}
+		catch(err)
+		{
+			framework.common.setSbName(err.message);
+		}
 	});
 
 	/* stop playback
 	==================================================================================*/
 	$('#myVideoStopBtn, #videoStopBtn').click(function(){
-		//writeLog("myVideoStopBtn Clicked");
 		myVideoStopRequest();
 	});
 
 	/* start playback
 	==================================================================================*/
 	$('#myVideoList').on("click", "li", function() {
-		//writeLog("myVideoList Clicked");
 		myVideoStartRequest($(this));
 	});
 
 	/* next track
 	==================================================================================*/
 	$('#myVideoNextBtn, #videoNextBtn').click(function(){
-		//writeLog("myVideoNextBtn Clicked");
 		myVideoNextRequest();
 	});
 
 	/* previous track
 	==================================================================================*/
 	$('#myVideoPreviousBtn, #videoPrevBtn').click(function(){
-		//writeLog("myVideoPreviousBtn Clicked");
 		myVideoPreviousRequest();
 	});
 
 	/* FF
 	==================================================================================*/
 	$('#myVideoFF').click(function(){
-		//writeLog("myVideoFF Clicked");
 		myVideoFFRequest();
 	});
 	$('#videoPlayFFBtn').click(function(){
-		//writeLog("videoPlayFFBtn Clicked");
 		myVideoFFRequest();
 	});
 
 	/* RW
 	==================================================================================*/
 	$('#myVideoRW').click(function(){
-		//writeLog("myVideoRW Clicked");
 		myVideoRWRequest();
 	});
 	$('#videoPlayRWBtn').click(function(){
-		//writeLog("videoPlayRWBtn Clicked");
 		myVideoRWRequest();
 	});
 
 	/* repeat option (looping single track)
 	==================================================================================*/
 	$('#myVideoRepeatBtn').click(function(){
-		//writeLog("myVideoRepeatBtn Clicked");
 		if(Repeat){
 			Repeat = false;
 			$('#myVideoRepeatBtn').css({'background-image' : boxUncheck});
@@ -311,14 +298,12 @@ $(document).ready(function(){
 			$('#myVideoRepeatBtn').css({'background-image' : boxChecked});
 		}
 		recentlyPlayed = [];
-		//writeLog("recentlyPlayed Reset");
 		localStorage.setItem('videoplayer.repeat', JSON.stringify(Repeat));
 	});
 
 	/* repeat all option (loop entire video list)
 	==================================================================================*/
 	$('#myVideoRepeatAllBtn, #videoReAllBtn').click(function(){
-		//writeLog("myVideoRepeatAllBtn Clicked");
 		if(RepeatAll){
 			RepeatAll = false;
 			$('#myVideoRepeatAllBtn').css({'background-image' : boxUncheck});
@@ -327,20 +312,17 @@ $(document).ready(function(){
 			$('#myVideoRepeatAllBtn').css({'background-image' : boxChecked});
 		}
 		recentlyPlayed = [];
-		//writeLog("recentlyPlayed Reset");
 		localStorage.setItem('videoplayer.repeatall', JSON.stringify(RepeatAll));
 	});
 
 	/* Shuffle option
 	==================================================================================*/
 	$('#myVideoShuffleBtn, #videoShuffleBtn').click(function(){
-		//writeLog("myVideoShuffleBtn Clicked");
 		if(Shuffle)
 		{
 			Shuffle = false;
 			$('#myVideoShuffleBtn').css({'background-image' : boxUncheck});
 			recentlyPlayed = [];
-			//writeLog("recentlyPlayed Reset");
 		}
 		else
 		{
@@ -353,7 +335,6 @@ $(document).ready(function(){
 	/* Music
 	==================================================================================*/
 	$('#myPlayMusicBtn').click(function(){
-		//writeLog("myPlayMusicBtn Clicked");
 		if(PlayMusic){
 			PlayMusic = false;
 			$('#myPlayMusicBtn').css({'background-image' : boxUncheck});
@@ -361,8 +342,8 @@ $(document).ready(function(){
 			PlayMusic = true;
 			$('#myPlayMusicBtn').css({'background-image' : boxChecked});
 		}
-		localStorage.setItem('videoplayer.playmusic', JSON.stringify(PlayMusic));
 		myVideoListRequest();
+		localStorage.setItem('videoplayer.playmusic', JSON.stringify(PlayMusic));
 	});
 
 	/* Toggle Background Button
@@ -371,10 +352,10 @@ $(document).ready(function(){
 		$('#myVideoContainer').toggleClass('noBg');
 		localStorage.setItem('videoplayer.background', JSON.stringify($('#myVideoContainer').hasClass('noBg')));
 	});
+
 	/* Show Current Playing Video Title in the Statusbar
 	==================================================================================*/
 	$('#optionStatusbarTitle').click(function(){
-		//writeLog("optionStatusbarTitle Clicked");
 		statusbarTitleVideo = !statusbarTitleVideo;
 		if (statusbarTitleVideo) {
 			$('#optionStatusbarTitle').css({'background-image' : boxChecked});
@@ -385,24 +366,23 @@ $(document).ready(function(){
 		localStorage.setItem('videoplayer.statusbartitle', JSON.stringify(statusbarTitleVideo));
 	});
 	$('#optionTestError').click(function(){
-		//writeLog("optionTestError Clicked... ");
-		//writeLog("When all your videos are optimized to 360p MP4 H264 AAC format you will almost never hit a memory error");
 		var res = "test";
 		showMemErrorMessage(res);
 		$('.memErrorMessage').delay(1500).fadeOut(1000);
+		$(this).blur();
 	});
 
-	/* Video information / options panel
-	==================================================================================*/
-	$('#myVideoInfo, #myVideoInfoClose').click(function(){
-		$('#videoInfoPanel').toggleClass('showInfo');
-	optionsPanelOpen = $('#videoInfoPanel').hasClass('showInfo');
-	if(optionsPanelOpen){
-		$('#popInfoTab').css("background", vpColor);
-		setCheckBoxes('#optionStatusbarTitle', statusbarTitleVideo);
-	} else {
-		SelectCurrentTrack();
-	}
+  /* Video information / options panel
+  ==================================================================================*/
+  $('#myVideoInfo, #myVideoInfoClose').click(function(){
+    $('#videoInfoPanel').toggleClass('showInfo');
+    optionsPanelOpen = $('#videoInfoPanel').hasClass('showInfo');
+    if(optionsPanelOpen){
+      $('#popInfoTab').css("background", vpColor);
+      setCheckBoxes('#optionStatusbarTitle', statusbarTitleVideo);
+    } else {
+      SelectCurrentTrack();
+    }
   });
 
 	$('#popInfoTab').click(function(){
@@ -431,12 +411,6 @@ $(document).ready(function(){
 			clearInterval(intervalVideoPlayer);
 
 			clearInterval(intervalPlaytime);
-
-			//if (enableLog === true)
-			//{
-				//writeLog("Closing App - New App: " + framework.getCurrentApp());
-				//myVideoWs('mount -o ro,remount /', false); //disable-write
-			//}
 		}
 	}, 1);//some performance issues ??
 });
@@ -452,7 +426,6 @@ $(document).ready(function(){
 /* reboot system
 ==========================================================================================================*/
 function myRebootSystem(){
-	//writeLog("myRebootSystem called");
 	myVideoWs('reboot', false); //reboot
 }
 
@@ -460,53 +433,46 @@ function myRebootSystem(){
 /* video list request / response
 ==========================================================================================================*/
 function myVideoListRequest(){
-	//writeLog("myVideoListRequest called");
-
 	if (!waitingWS)
 	{
 		waitingWS=true;
 		currentVideoListContainer = 0;
 		$('#myVideoScrollUp').css({'visibility' : 'hidden'});
 		$('#myVideoScrollDown').css({'visibility' : 'hidden'});
-		//$('#toggleBgBtn').css({'visibility' : 'hidden'});
-		//$('#myVideoInfo').css({'visibility' : 'hidden'});
 		$('#myVideoList').html("<img id='ajaxLoader' src='apps/_videoplayer/templates/VideoPlayer/images/ajax-loader.gif'>");
 
-
-		//writeLog("Start List Recall");
 		src='';
-
-		//if (enableLog)
-		//{
-			//src += 'echo "====retrieve list start====" >> '+logFile+'; ';
-		//}
 
 		src += 'FILES=""; ';
 
 		if (!PlayMusic)
 		{
 			src += 'for VIDEO in /tmp/mnt/sd*/Movies/*.mp4 /tmp/mnt/sd*/Movies/*.avi /tmp/mnt/sd*/Movies/*.flv /tmp/mnt/sd*/Movies/*.wmv /tmp/mnt/sd*/Movies/*.3gp /tmp/mnt/sd*/Movies/*.mkv;';
+			$('#myVideoFullScrBtn').css({'display' : 'block'});
+			$('#myVideoFullScrBtn').css({'visibility' : 'visible'});
+			$("#myVideoFullScrBtn").addClass('playbackOption');
 		}
 		else
 		{
 			src += 'for VIDEO in /tmp/mnt/sd*/Music/*.flac /tmp/mnt/sd*/Music/*.mp3;';
+			$('#myVideoFullScrBtn').css({'display' : 'none'});
+			$('#myVideoFullScrBtn').css({'visibility' : 'hidden'});
+			$("#myVideoFullScrBtn").removeClass('playbackOption');
 		}
 
 		src += 'do ' +
-			'FILES="${FILES}${VIDEO}|"; ' + 
+			'FILES="${FILES}${VIDEO}|"; ' +
 			'done; ' +
 			'FILES=$(echo "${FILES}" | tr \'|\' \'\n\' | sort -f -t \/ -k 6 | tr \'\n\' \'|\'); ';
 
-		src += 'echo playback-list#"${FILES}"';
+		src += 'echo playback-list//#"${FILES}"';
 
-		//writeLog(src);
 		myVideoWs(src, true); //playback-list
 	}
 
 }
 
 function myVideoListResponse(data){
-	//writeLog("myVideoListResponse called");
 	waitingWS=false;
 
 	$("#myVideoList").html("");
@@ -528,7 +494,6 @@ function myVideoListResponse(data){
 
 
 	if((!videos[0]) || (videos[0] === "")){
-		//writeLog("No videos found");
 
 		var txt;
 
@@ -545,16 +510,14 @@ function myVideoListResponse(data){
 
 		currentVideoTrack = null;
 
-	$(".playbackOption").css("background-image", function(i, val){return val.substring(0, val.indexOf(")")+1);});
+		$(".playbackOption").css("background-image", function(i, val){return val.substring(0, val.indexOf(")")+1);});
 
 		selectedOptionItem = 8;
 
-	$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){return val + ", -o-linear-gradient(top," + vphColor + ", rgba(0,0,0,0))";});
+		$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){return val + ", -o-linear-gradient(top," + vphColor + ", rgba(0,0,0,0))";});
 	}
 	else
 	{
-		//writeLog("myVideoList insert data --- " + data);
-
 		$(".playbackOption").css("background-image", function(i, val){return val.substring(0, val.indexOf(")") + 1);});
 		$("#myVideoList").append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
 		.addClass("videoListContainer"));
@@ -569,11 +532,11 @@ function myVideoListResponse(data){
 				.addClass("videoListContainer"));
 				videoListUl = $("#ul"+totalVideoListContainer);
 			}
-	
+
 			var videoName = item.replace(folderPath, '');
 			if (!PlayMusic)
 			{
-				videoName = videoName.substring(videoName.search(/\/movies\//i) + 8);
+			videoName = videoName.substring(videoName.search(/\/movies\//i) + 8);
 			}
 			else
 			{
@@ -584,25 +547,26 @@ function myVideoListResponse(data){
 			.attr({
 				'video-name': videoName,
 				'video-data': item
-			})
+				})
 			.addClass('videoTrack')
 			.html(index + 1 + ". " + videoName.replace(/  /g, " &nbsp;")));
 		});
 
 		totalVideos = videos.length;
-		SelectCurrentTrack();// Check for USB Existance
+		SelectCurrentTrack();
 
 		if(totalVideoListContainer > 1)
 		{
 			$('#myVideoScrollDown').css({'visibility' : 'visible'});
 		}
+		
+		//framework.common.setSbName('a - ' + localStorage.length);
 	}
 }
 
 /* video list scroll up / down
 ==========================================================================================================*/
 function myVideoListScrollUpDown(action){
-	//writeLog("myVideoListScrollUpDown called");
 
 	switch(action) {
 		case 'up':
@@ -636,20 +600,15 @@ function myVideoListScrollUpDown(action){
 	});
 
 	$(".videoListContainer:eq(" + currentVideoListContainer + ")").css("display", "");
-
-	//*********************************************************************
-	//$('#toggleBgBtn').css({'visibility' : 'visible'});
-	//$('#myVideoInfo').css({'visibility' : 'visible'});
-	//*********************************************************************
 }
 
 
 /* start playback request / response
 ==========================================================================================================*/
 function myVideoStartRequest(obj){
-	//writeLog("myVideoStartRequest called");
 
-	 $('#videoInfoPanel').removeClass('showInfo');
+	$('#videoInfoPanel').removeClass('showInfo');
+	//musicIsPaused = true;
 	optionsPanelOpen = false;
 	currentVideoTrack = $(".videoTrack").index(obj);
 	var videoToPlay = obj.attr('video-data');
@@ -659,7 +618,6 @@ function myVideoStartRequest(obj){
 	$('#myVideoName').css({'display' : 'block'});
 	$('#myVideoStatus').css({'display' : 'block'});
 	$('.memErrorMessage').remove();
-	//writeLog("Recently Played: " + recentlyPlayed);
 	$('#widgetContent').prepend($('</div>').addClass('recentPlayedItem').text(currentVideoTrack + ": " + videoToPlay));
 
 	metadataAlbum = null;
@@ -671,27 +629,24 @@ function myVideoStartRequest(obj){
 	metadataComment = null;
 	metadataGenre = null;
 	metadataAudioCodec = null;
+	metadataVideoRatio = null;
+	videoHeight = null;
+	videoWidth = null;
 
 	localStorage.setItem('videoplayer.currentvideo', JSON.stringify(currentVideoTrack));
 
 	TotalVideoTime = null;
 	waitingNext = false;
 
-	//writeLog("myVideoStartRequest - Video #" + currentVideoTrack + ": " + videoToPlay);
-
 	if (recentlyPlayed.indexOf(currentVideoTrack) === -1)
 	{
 		recentlyPlayed.push(currentVideoTrack);
-		//writeLog("Add Track " + currentVideoTrack + " to recentlyPlayed list");
 	}
 	else
 	{
 		recentlyPlayed.push(recentlyPlayed.splice(recentlyPlayed.indexOf(currentVideoTrack), 1)[0]);
-		//writeLog("Moved Track " + currentVideoTrack + " to end of the recentlyPlayed list");
 	}
 	//myVideoWs('killall gplay', false); //start-playback
-
-	////writeLog("myVideoStartRequest - Kill gplay");
 
 	myVideoWs('sync; for n in 0 1 2 3; do echo $n > /proc/sys/vm/drop_caches; done;', false);
 
@@ -725,16 +680,13 @@ function myVideoStartRequest(obj){
 
 	try
 	{
-				
 		src = 'killall -9 gplay; ';
 		src += 'sleep 0.3; ';
 
-		//writeLog('start playing');
-
-		//writeLog(videoToPlay);
 		if (statusbarTitleVideo) {
 			framework.common.setSbName($('#myVideoName').text());
 		}
+    framework.common.startTimedSbn(this.uiaId, "SbnVPTest", "typeE", {sbnStyle : "Style02",imagePath1 : 'apps/_videoplayer/templates/VideoPlayer/images/icon.png', text1Id : this.uiaId, text2: $('#myVideoName').text()});
 
 		//Screen size 800w*480h
 		//Small screen player 700w*367h
@@ -748,24 +700,21 @@ function myVideoStartRequest(obj){
 		} */
 
 		//src += '" --audio-sink=alsasink ';
+		// Trying to asign to specific alsa device or card to take audio focus
+		//src += '" --audio-sink="alsasink device=entertainmentBtsa" ';
 		src += '"' + videoToPlay + '" 2>&1 ';
 
-		//if (enableLog)
-		//{
-			//src += "| tee -a "+ logFile +"; ";
-		//}
-
-		//writeLog(src);
 		CurrentVideoPlayTime = null;
-		
+
 		wsVideo = new WebSocket('ws://127.0.0.1:9998/');
 		wsVideo.onopen = function(){
-			if (PlayMusic)
-			{
-				wsVideo.send('/usr/bin/gst-discoverer-0.10 "' + videoToPlay + '"');
-			}
+			//if (PlayMusic)
+			//{
+				wsVideo.send('/usr/bin/gst-discoverer-0.10 -v "' + videoToPlay + '"');
+			//}
 			wsVideo.send(src);
 		};
+
 		wsVideo.onmessage=function(event)
 		{
 			checkStatus(event.data);
@@ -774,25 +723,16 @@ function myVideoStartRequest(obj){
 	}
 	catch(err)
 	{
-		//writeLog("Error: " + err);
 	}
-
-	// if ((!PlayMusic) && (!FullScreen))
-	// {
-		// setTimeout(function () {
-			// wsVideo.send('z 50 64 700 367');
-		// }, 400);
-	// }
 }
 
 
 /* playback next track request
 ==========================================================================================================*/
 function myVideoNextRequest(){
-	//writeLog("myVideoNextRequest called");
 
 	clearInterval(intervalPlaytime);
-	
+
 	$('#myVideoName').html('');
 	$('#myVideoStatus').html('');
 
@@ -843,18 +783,17 @@ function myVideoNextRequest(){
 
 		localStorage.setItem('videoplayer.recentlyplayed', JSON.stringify(recentlyPlayed));
 
-		//writeLog("myVideoNextRequest select next track -- " + nextVideoTrack);
 		var nextVideoObject = $(".videoTrack:eq(" + nextVideoTrack + ")");
-		
+
 		if(nextVideoObject.length !== 0)
 		{
 			try
 			{
-				wsVideo.send('x');
+			wsVideo.send('x');
 			}
 			catch(e)
 			{
-				
+
 			}
 			myVideoWs('killall -9 gplay', false);
 			wsVideo.close();
@@ -875,10 +814,9 @@ function myVideoNextRequest(){
 /* playback previous track request
 ==========================================================================================================*/
 function myVideoPreviousRequest(){
-	//writeLog("myVideoPreviousRequest called");
 
 	clearInterval(intervalPlaytime);
-	
+
 	$('#myVideoName').html('');
 	$('#myVideoStatus').html('');
 
@@ -913,9 +851,9 @@ function myVideoPreviousRequest(){
 /* stop playback request / response
 ==========================================================================================================*/
 function myVideoStopRequest(){
-	//writeLog("myVideoStopRequest called");
-
-	framework.common.setSbName("Video Player");
+  if (statusbarTitleVideo && framework.getCurrentApp() === "_videoplayer") {
+    framework.common.setSbName("Video Player");
+  }
 
 	if (wsVideo !== null)
 	{
@@ -930,11 +868,12 @@ function myVideoStopRequest(){
 
 	$('#myVideoName').html('');
 	$('#myVideoStatus').html('');
-	VideoPaused=false;
+	VideoPaused = false;
 	$('#myVideoPausePlayBtn').css({'background-image' : 'url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPauseBtn.png)'});
 
 	SelectCurrentTrack();
 
+	$('#blackBgn').css({'visibility' : 'hidden'});
 	$('#myVideoPreviousBtn').css({'display' : 'none'});
 	$('#myVideoRW').css({'display' : 'none'});
 	$('#myVideoPausePlayBtn').css({'display' : 'none'});
@@ -965,7 +904,6 @@ function myVideoStopRequest(){
 /* Play/Pause playback request / response
 ==========================================================================================================*/
 function myVideoPausePlayRequest(){
-	//writeLog("myVideoPausePlayRequest called");
 
 	if (!waitingWS)
 	{
@@ -992,14 +930,13 @@ function myVideoPausePlayRequest(){
 /* FF playback request / response
 ==========================================================================================================*/
 function myVideoFFRequest(){
-	//writeLog("myVideoFFRequest called");
 
 	if ((!waitingWS) && (CurrentVideoPlayTime))
 	{
 		waitingWS = true;
-		
+
 		if (CurrentVideoPlayTime > 0 && CurrentVideoPlayTime + 11 < TotalVideoTime)
-		{	
+		{
 			CurrentVideoPlayTime = CurrentVideoPlayTime + 10;
 		}
 		else
@@ -1016,7 +953,6 @@ function myVideoFFRequest(){
 /* RW playback request / response
 ==========================================================================================================*/
 function myVideoRWRequest(){
-	//writeLog("myVideoRWRequest called");
 
 	if ((!waitingWS) && (CurrentVideoPlayTime))
 	{
@@ -1043,33 +979,66 @@ function fullScreenRequest()
 	{
 		waitingWS = true;
 
-		if(FullScreen){
-			FullScreen = false;
-			$('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
-			wsVideo.send('z 50 64 700 367');
+		if (!metadataVideoRatio)
+		{
+			metadataVideoRatio = (800/480);
 		}
-		else {
-			FullScreen = true;
-			$('#myVideoFullScrBtn').css({'background-image' : boxChecked});
-			wsVideo.send('z 0 0 800 480');
+		
+		if (FullScreen === 0) 
+		{
+			//FullScreen = false;
+			//$('#myVideoFullScrBtn').css({'background-image' : boxUncheck});
+			$('#blackBgn').css({'visibility' : 'hidden'});
+
+			// if (stretchVideo)
+			// {
+				// wsVideo.send('z 50 64 700 367');
+			// }
+			if (metadataVideoRatio > (800/368)) //wider and taller than 367/ width fixed to 800
+			{
+				videoHeight = Math.round(800 / metadataVideoRatio);
+				var videoPosy = Math.round((480 - videoHeight)/2);
+				wsVideo.send('z 0 ' + videoPosy + ' 800 ' + videoHeight);
+			}
+			else
+			{
+				videoWidth = Math.round(368 * metadataVideoRatio);
+				var videoPosx = Math.round((800 - videoWidth)/2);
+				wsVideo.send('z ' + videoPosx + ' 64 ' + videoWidth + ' 368');
+			}
+		}
+		//}
+		else
+		{
+			//FullScreen = true;
+			//$('#myVideoFullScrBtn').css({'background-image' : boxChecked});
+			$('#blackBgn').css({'visibility' : 'visible'});
+			
+			if (FullScreen === 1)
+			{
+				if (metadataVideoRatio > (800/480)) //wider / width fixed to 800
+				{
+					videoHeight = Math.round(800 / metadataVideoRatio);
+					var videoPosy = Math.round((480 - videoHeight)/2);
+					wsVideo.send('z 0 ' + videoPosy + ' 800 ' + videoHeight);
+				}
+				else //height fixed to 480
+				{
+					videoWidth = Math.round(480 * metadataVideoRatio);
+					var videoPosx = Math.round((800 - videoWidth)/2);
+					wsVideo.send('z ' + videoPosx + ' 0 ' + videoWidth + ' 480');
+				}
+			}
+			else
+			{
+				wsVideo.send('z 0 0 800 480');
+			}
 		}
 
 		localStorage.setItem('videoplayer.fullscreen', JSON.stringify(FullScreen));
 		waitingWS = false;
 	}
 }
-
-
-/* write log
-==========================================================================================================*/
-//function writeLog(logText){
-	//if (enableLog)
-	//{
-		//var dt = new Date();
-		//myVideoWs('echo "' + dt.toISOString() + '; ' + logText.replace('"', '\"').replace("$", "\\$").replace(">", "\>").replace("<", "\<") +
-		//'" >> ' + logFile, false); //write_log
-	//}
-//}
 
 
 /* check Status
@@ -1080,23 +1049,45 @@ function checkStatus(state)
 
 	if (res.indexOf("Playing  ]") !== -1)
 	{
-		res = res.substring(res.indexOf("Vol=") + 8, res.indexOf("Vol=") + 25); 
-		$('#myVideoStatus').html(res);
+	res = res.substring(res.indexOf("Vol=") + 8, res.indexOf("Vol=") + 25);
+	$('#myVideoStatus').html(res);
 	}
 	else if (res.indexOf("fsl_player_play") !== -1)
 	{
-		if ((!PlayMusic) && (!FullScreen))
+		//if ((!PlayMusic) && (!FullScreen))
+		if (!PlayMusic)
 		{
-			wsVideo.send('z 50 64 700 367');
+			//wsVideo.send('z 50 64 700 367');
+			if (FullScreen !== 2)
+			{
+				fullScreenRequest();  
+			}
 		}
 		
 		CurrentVideoPlayTime = 0;
-		startPlayTimeInterval();		
+		startPlayTimeInterval();
 	}
-	//else if (res.indexOf("ERR]") !== -1)
-	else if (res.indexOf("try to play failed") !== -1)
+	else if (res.indexOf("try to play failed") !== -1 || res.indexOf("ERR]") !== -1)
 	{
 		showMemErrorMessage(res);
+	}
+	//else if ((!metadataVideoRatio) && (res.indexOf("width=") !== -1))
+	// {
+		// res = res.split(",");
+		////video/x-h264, parsed=(boolean)true, width=(int)854, height=(int)480, framerate=(
+		////metadataWidth = res[2].split(")")[1];
+		////metadataHeight = res[3].split(")")[1];
+	
+		// metadataVideoRatio = (res[2].split(")")[1])/(res[3].split(")")[1]); //ratio W/H
+	//}
+	else if ((!videoHeight) && (res.indexOf("Height: ") !== -1))
+	{
+		videoHeight = res.substring(8);
+		metadataVideoRatio = videoWidth / videoHeight; //ratio W/H
+	}
+	else if ((!videoHeight) && (res.indexOf("Width: ") !== -1))
+	{
+		videoWidth = res.substring(7);
 	}
 	else if (res.indexOf("fsl_player_stop") !== -1)
 	{
@@ -1150,7 +1141,7 @@ function checkStatus(state)
 	else if ((!TotalVideoTime) && ((res.indexOf("Duration: ") !== -1) || (res.indexOf("Duration  : ") !== -1)))
 	{
 		res = res.split(":");
-		TotalVideoTime = Number(res[1]*3600) + Number(res[2]*60) + Number(res[3].substring(0,2));	
+		TotalVideoTime = Number(res[1]*3600) + Number(res[2]*60) + Number(res[3].substring(0,2));
 	}
 }
 
@@ -1196,18 +1187,17 @@ function DisplayMetadata()
 	{
 		txt += '<tr><td>Comment</td><td>' + metadataComment + '</td></tr>';
 	}
-	
+
 	txt += '</table>';
-	
+
 	$("#myMusicMetadata").html(txt);
 }
+
 
 /* Select Current Track
 ============================================================================================= */
 function SelectCurrentTrack()
 {
-	//writeLog('SelectCurrentTrack called');
-
 	$(".videoTrack").removeClass(vpColorClass);
 	if ((currentVideoTrack === null) || (currentVideoTrack > totalVideos -1))
 	{
@@ -1227,11 +1217,10 @@ function SelectCurrentTrack()
 
 function showMemErrorMessage(res){
 	$('#videoPlayControl').hide();
-	$('#myVideoNextBtn').css({'display' : ''});
 	$('#myVideoName').css({'font-size':'16px','padding':'2px'}).html("Memory Error.- " + res);
-	$('#myVideoContainer').append('<div id="memErrorMessage" class="memErrorMessage"><b>***************&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MEMORY ERROR.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;***************</b><br><br>TRY PLAYING THE NEXT VIDEO<br>TO AVOID THIS ERROR REMOVE NAV SD CARD BEFORE PLAYING VIDEOS.<br><br>IF ERRORS CONTINUE TAP THIS MESSAGE TO REBOOT<br><br>BEST VIDEO FORMAT TO MINIMIZE MEMORY ERRORS: <br><div style="font-size:30px;font-weight:bold;">MP4 H264 AAC 360P</div><br><ul></ul></div>');
-	//$('#myVideoInfo').css({'visibility' : 'visible'});
+	$('#myVideoContainer').append('<div id="memErrorMessage" class="memErrorMessage"><b>***************&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MEMORY ERROR.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;***************</b><br>'+res.substring(res.indexOf("[ERR]"))+'<br>TRY PLAYING THE NEXT VIDEO<br>TO AVOID THIS ERROR REMOVE NAV SD CARD BEFORE PLAYING VIDEOS.<br><br>IF ERRORS CONTINUE TAP THIS MESSAGE TO REBOOT<br><br>BEST VIDEO FORMAT TO MINIMIZE MEMORY ERRORS: <br><div style="font-size:30px;font-weight:bold;">MP4 H264 AAC 360P</div><br><ul></ul></div>');
 	if(res !== "test"){
+		$('#myVideoNextBtn').css({'display' : ''});
 		$('.memErrorMessage').click(function(){
 			$('.memErrorMessage').html("<div style='font-size:40px'>REBOOTING</div>");
 			myRebootSystem();
@@ -1250,10 +1239,10 @@ function startPlayTimeInterval()
 {
 	intervalPlaytime = setInterval(function (){
 		wsVideo.send('h');
-		
+
 		if (!VideoPaused)
 		{
-			CurrentVideoPlayTime++;			
+			CurrentVideoPlayTime++;
 		}
 	}, 1000);
 }
@@ -1263,8 +1252,6 @@ function startPlayTimeInterval()
 ============================================================================================= */
 function handleCommander(eventID)
 {
-	//writeLog('handleCommander - ' + eventID);
-
 	switch(eventID) {
 
 		case "down":
@@ -1328,6 +1315,20 @@ function handleCommander(eventID)
 		}
 		else
 		{
+			//FullScreen = !FullScreen;
+			if (FullScreen === 0)
+			{
+				FullScreen = 1;
+			}
+			else if (FullScreen === 1)
+			{
+				FullScreen = 2;
+			}
+			else
+			{
+				FullScreen = 0;
+			}
+			$('#myVideoFullScrBtn').css('background-image', 'url(apps/_videoplayer/templates/VideoPlayer/images/myFullScreen' + FullScreen + '.png)');
 			fullScreenRequest();
 		}
 		break;
@@ -1335,9 +1336,9 @@ function handleCommander(eventID)
 		case "ccw":
 		if (optionsPanelOpen)
 		{
-		$('#colorThemes a').css({'background':''});
+      $('#colorThemes a').css({'background':''});
 			$(".panelOptions a").removeClass(vpColorClass);
-			(selectedItem < 0) ? selectedItem = 9 : selectedItem--;
+			(selectedItem < 0) ? selectedItem = 8 : selectedItem--;
 			$(".panelOptions a").eq(selectedItem).addClass(vpColorClass);
 		}
 		else if (currentVideoTrack !== null)
@@ -1375,9 +1376,9 @@ function handleCommander(eventID)
 		case "cw":
 		if (optionsPanelOpen)
 		{
-		$('#colorThemes a').css({'background':''});
+      $('#colorThemes a').css({'background':''});
 			$(".panelOptions a").removeClass(vpColorClass);
-			(selectedItem > 9) ? selectedItem = 0 : selectedItem++;
+			(selectedItem > 8) ? selectedItem = 0 : selectedItem++;
 			$(".panelOptions a").eq(selectedItem).addClass(vpColorClass);
 		}
 		else if (currentVideoTrack !== null)
@@ -1424,7 +1425,8 @@ function handleCommander(eventID)
 			$(".playbackOption").css("background-image", function(i, val){return val.substring(0, val.indexOf(")") + 1);});
 			selectedOptionItem++;
 
-			if (selectedOptionItem > 7)
+			//if (selectedOptionItem > 7)
+			if (selectedOptionItem >= $(".playbackOption").length)
 			{
 				selectedOptionItem = 0;
 			}
@@ -1440,7 +1442,7 @@ function handleCommander(eventID)
 		}
 		else if (optionsPanelOpen)
 		{
-		$(".videoTrack").removeClass(vpColorClass);
+      $(".videoTrack").removeClass(vpColorClass);
 			$('.panelOptions .' + vpColorClass).click();
 		}
 		else
@@ -1474,7 +1476,8 @@ function handleCommander(eventID)
 
 			if (selectedOptionItem < 0)
 			{
-				selectedOptionItem = 8;
+				//selectedOptionItem = 7;
+				selectedOptionItem = $(".playbackOption").length - 1;
 			}
 
 			$(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val){return val + ", -o-linear-gradient(top," + vphColor + ", rgba(0,0,0,0))";});
@@ -1498,11 +1501,11 @@ function myVideoWs(action, waitMessage){
 
 		ws.close();
 		ws=null;
-		
+
 		if (res.indexOf('playback-list') !== -1)
 		{
-			res = event.data.split('#');
-			myVideoListResponse(res[1]);	
+			res = event.data.split('//#');
+			myVideoListResponse(res[1]);
 		}
 	};
 

@@ -39,6 +39,43 @@ get_cmu_ver()
   _ver=$(grep "^JCI_SW_VER=" /jci/version.ini | sed 's/^.*_\([^_]*\)\"$/\1/' | cut -d '.' -f 1)
   echo ${_ver}
 }
+			 
+ 
+				
+									 
+								   
+ 
+		  
+ 
+						   
+	  
+				  
+										 
+									   
+	
+ 
+				 
+						  
+												 
+				
+ 
+									  
+		  
+	  
+		  
+	
+ 
+			   
+ 
+				
+																   
+	  
+													
+															 
+									 
+																								  
+	
+ 
 compatibility_check()
 {
   # Compatibility check falls into 5 groups:
@@ -170,10 +207,16 @@ add_app_json()
   else
     log_message "===        ${2} already exists in additionalApps.json          ==="
   fi
+													 
+	  
+																															  
+																						   
+	
 }
 remove_app_json()
 # script by vic_bam85
 {
+														  
   # check if app entry in additionalApps.json still exists, if so, then it will be deleted
   count=$(grep -c '{ "name": "'"${1}"'"' /jci/opera/opera_dir/userjs/additionalApps.json)
   if [ "$count" -gt "0" ]
@@ -212,6 +255,12 @@ remove_app_json()
   else
     log_message "===            ${1} not found in additionalApps.json              ==="
   fi
+														  
+													 
+	  
+																															  
+																						   
+	
 }
 # disable watchdog and allow write access
 echo 1 > /sys/class/gpio/Watchdog\ Disable/value
@@ -223,7 +272,17 @@ CMU_SW_VER=$(get_cmu_sw_version)
 COMPAT_GROUP=$(compatibility_check)
 rm -f "${MYDIR}/AIO_log.txt"
 rm -f "${MYDIR}/AIO_info.json"
+		   
 mkdir -p "${MYDIR}/bakups/test/"
+									  
+											   
+										
+	
+										   
+																	 
+													
+  
+							  
 
 log_message "========================================================================="
 log_message "=======================   START LOGGING TWEAKS...  ======================"
@@ -231,7 +290,13 @@ log_message "======================= AIO v.${AIO_VER}  -  ${AIO_DATE} ==========
 log_message "======================= CMU_SW_VER = ${CMU_SW_VER} ======================"
 log_message "=======================  COMPATIBILITY_GROUP  = ${COMPAT_GROUP} ======================="
 #log_message "======================== CMU_VER = ${CMU_VER} ====================="
+							  
+																						 
+																				  
+	
 log_message ""
+												 
+  
 log_message "=======================   MYDIR = ${MYDIR}    ======================"
 log_message "==================      DATE = $(timestamp)        ================="
 
@@ -361,12 +426,12 @@ fi
 
 #######################################################################
 # Video_Player by many many people
-# V3.1 - Mods by vic_bam85 & Trezdog44
+# V3.4 - Mods by vic_bam85 & Trezdog44
 #######################################################################
-show_message "VIDEOPLAYER v3.3\nMODS BY VIC_BAM85 & TREZDOG44"
+show_message "VIDEOPLAYER v3.4\nMODS BY VIC_BAM85 & TREZDOG44"
 log_message "============***********   INSTALL VIDEOPLAYER   ************============="
 
-log_message "===             Begin Installation of VideoPlayer V3.2                ==="
+log_message "===             Begin Installation of VideoPlayer V3.4                ==="
 
 if [ "${TESTBKUPS}" = "1" ]
 then
@@ -400,10 +465,15 @@ then
   log_message "===                   Created additionalApps.json                     ==="
 fi
 
+										   
+										  
+
 # Copies the content of the addon-common folder
+																								   
 cp -a ${MYDIR}/config/videoplayer/jci/gui/addon-common/ /jci/gui/
 chmod 755 -R /jci/gui/addon-common/
 log_message "===                      Copied addon-common folder                   ==="
+  
 
 # Remove old port configuration
 count=$(grep -c '/jci/gui/addon-common/websocketd --port=55555 sh' /jci/scripts/stage_wifi.sh)
