@@ -16,7 +16,10 @@ function _videoplayerApp(uiaId) {
   baseApp.init(this, uiaId);
 }
 
-
+// load jQuery Globally (if needed)
+if (!window.jQuery) {
+  utility.loadScript("addon-common/jquery.min.js");
+}
 /*********************************
  * App Init is standard function *
  * called by framework           *
@@ -81,8 +84,10 @@ _videoplayerApp.prototype._noLongerDisplayed = function() {
   // If we are in reverse then save CurrentVideoPlayTime to resume the video where we left of
   if (framework.getCurrentApp() === 'backupparking' || (ResumePlay && CurrentVideoPlayTime > 0)) {
     this.resumePlay = CurrentVideoPlayTime;
-    localStorage.setItem('videoplayer.resume', JSON.stringify(CurrentVideoPlayTime));
     CurrentVideoPlayTime = null;
+    //localStorage.setItem('videoplayer.resume', JSON.stringify(CurrentVideoPlayTime));
+  } else {
+    this.resumePlay = 0;
   }
   // If we press the 'Entertainment' button we will be running this in the 'usbaudio' context
   if (!this.musicIsPaused) {

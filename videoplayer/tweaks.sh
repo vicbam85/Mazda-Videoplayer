@@ -83,6 +83,11 @@ add_app_json()
     echo "additionalApps = $(cat /jci/opera/opera_dir/userjs/additionalApps.json)" > /jci/opera/opera_dir/userjs/nativeApps.js
     log_message "Updated nativeApps.js"
   fi
+													 
+	  
+																															  
+																						   
+	
 }
 
 
@@ -221,12 +226,9 @@ if [ "$count" = "0" ]
 		chmod 755 /jci/scripts/stage_wifi.sh
 fi
 
-
-
 #call to the function to populate the json
 log_message "mod to /jci/opera/opera_dir/userjs/additionalApps.json"
 add_app_json "_videoplayer" "Video Player"
-
 
 log_message "Copy files to jci/gui/apps"
 
@@ -237,8 +239,13 @@ chmod 755 -R /jci/gui/apps/_videoplayer/
 log_message "=== END OF COPY ==="
 
 cp -a ${MYDIR}/config/usr/lib/gstreamer-0.10/* /usr/lib/gstreamer-0.10/
+cp -a ${MYDIR}/config/videoplayer/usr/lib/libFLAC.so.8.3.0 /usr/lib/
 chmod 755 -R /usr/lib/gstreamer-0.10/libgstautodetect.so
+chmod 755 -R /usr/lib/gstreamer-0.10/libgstflac.so
+chmod 755 -R /usr/lib/libFLAC.so.8.3.0
+ln -s /usr/lib/libFLAC.so.8.3.0 /usr/lib/libFLAC.so.8
 log_message "===    Copy libs to usr/lib/gstreamer-0.10     ==="
+
 
 count=$(grep -c '/imx-mm/video-codec' /etc/profile)
 if [ "$count" = "0" ]

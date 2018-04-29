@@ -100,7 +100,7 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties) {
     '<script src="apps/_videoplayer/js/videoplayer-v3.js" type="text/javascript"></script>';
   // Append the control div with black overlay background to body so it overlays everything
   // this div is removed in the cleanUp() function
-  $('body').append('<div class="VPControlOverlay">');
+  document.body.appendChild(document.createElement('div')).className = "VPControlOverlay";
   this.playerControl = '<div id="blackBgn">' +
     '<div class="StatusBarCtrlAppName VPCtrlAppName"></div>' +
     '<div id="blackOutVideoStatus" style="font-style:italic"></div>' +
@@ -115,7 +115,7 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties) {
     '<li id="videoPlayFFBtn" class="videoTouchControls"></li>' +
     '<li id="videoNextBtn" class="videoTouchControls"></li>' +
     '</ul>';
-  $('.VPControlOverlay').html(this.playerControl);
+  document.getElementsByClassName('VPControlOverlay')[0].innerHTML = this.playerControl;
   setTimeout(function() {
     // We have kick off the video player with this function
     StartVideoPlayerApp();
