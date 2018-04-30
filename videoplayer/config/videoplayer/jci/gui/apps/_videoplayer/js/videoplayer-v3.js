@@ -1167,7 +1167,7 @@
 
    currentVideoTrack = null;
 
-   if (player.resumePlay) {
+   if (player.resumePlay && framework.getCurrentApp() === "_videoplayer") {
 
      myVideoStartRequest($(".videoTrack").eq(selectedItem));
 
