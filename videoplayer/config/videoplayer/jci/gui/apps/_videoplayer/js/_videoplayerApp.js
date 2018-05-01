@@ -82,12 +82,10 @@ _videoplayerApp.prototype._noLongerDisplayed = function() {
   CloseVideoFrame();
 
   // If we are in reverse then save CurrentVideoPlayTime to resume the video where we left of
-  if (framework.getCurrentApp() === 'backupparking' || (ResumePlay && CurrentVideoPlayTime > 0)) {
-    this.resumePlay = CurrentVideoPlayTime;
-    CurrentVideoPlayTime = null;
+  if (framework.getCurrentApp() === 'backupparking' || (ResumePlay && CurrentVideoPlayTime !== null)) {
+    this.resumePlay = this.resumePlay || CurrentVideoPlayTime;
+    CurrentVideoPlayTime = 0;
     //localStorage.setItem('videoplayer.resume', JSON.stringify(CurrentVideoPlayTime));
-  } else {
-    this.resumePlay = 0;
   }
   // If we press the 'Entertainment' button we will be running this in the 'usbaudio' context
   if (!this.musicIsPaused) {
