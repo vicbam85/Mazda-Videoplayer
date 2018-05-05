@@ -32,6 +32,10 @@ if (!window.jQuery) {
 
 _videoplayerApp.prototype.appInit = function() {
   log.debug("_videoplayerApp appInit  called...");
+  // This only needs to be running once
+  if (UMswap === null && typeof swapfileShutdownUnmount === "function") {
+    swapfileShutdownUnmount();
+  }
   // These values need to persist through videoplayer instances
   this.hold = false;
   this.resumePlay = 0;
@@ -73,14 +77,13 @@ _videoplayerApp.prototype._StartContextReady = function() {
   framework.common.setSbDomainIcon("apps/_videoplayer/templates/VideoPlayer/images/icon.png");
 };
 _videoplayerApp.prototype._StartContextOut = function() {
+  CloseVideoFrame();
   framework.common.setSbName('');
 };
 
 _videoplayerApp.prototype._noLongerDisplayed = function() {
-
   // Stop and close video frame
   CloseVideoFrame();
-
   // If we are in reverse then save CurrentVideoPlayTime to resume the video where we left of
   if (framework.getCurrentApp() === 'backupparking' || (ResumePlay && CurrentVideoPlayTime !== null)) {
     this.resumePlay = this.resumePlay || CurrentVideoPlayTime;

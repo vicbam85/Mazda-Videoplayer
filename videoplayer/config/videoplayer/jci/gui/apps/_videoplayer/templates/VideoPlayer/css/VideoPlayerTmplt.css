@@ -28,6 +28,12 @@
   height: 40px;
   width: 50px;
   bottom: 0;
+  transition: none;
+  opacity: 1;
+}
+.VPControlOverlay.blackOut #blackOutVideoStatus.out {
+  transition: opacity 2s ease-in-out 1s;
+  opacity: 0;
 }
 .VPControlOverlay.blackOut.wideVideo #blackOutVideoStatus div {
   padding-right: 3px;
@@ -52,7 +58,7 @@
   width: 100%;
 }
 #blackBgn .VPCtrlAppName {
-    height: 12%;
+  height: 12%;
 }
 .VPControlOverlay.blackOut #blackBgn {
   background-color: black;
@@ -481,4 +487,19 @@
 }
 .VideoPlayerTmplt li#colorThemes {
   margin-top: 25px;
+}
+.VideoPlayerTmplt #videoPlayBtn {
+  background-image: ''
+}
+.VideoPlayerTmplt.videoPlaying #myVideoShuffleBtn, .VideoPlayerTmplt.videoPlaying #myVideoMovieBtn, .VideoPlayerTmplt.videoPlaying #myVideoFullScrBtn, .VideoPlayerTmplt.videoPlaying #myResumePlay, .VideoPlayerTmplt.videoPlaying #myVideoRepeatBtn, .VideoPlayerTmplt.videoPlaying #myPlayMusicBtn, .VideoPlayerTmplt.videoPlaying #rebootBtnDiv, .VideoPlayerTmplt #myVideoPreviousBtn, .VideoPlayerTmplt #myVideoRW, .VideoPlayerTmplt #myVideoPausePlayBtn, .VideoPlayerTmplt #myVideoFF, .VideoPlayerTmplt #myVideoNextBtn, .VideoPlayerTmplt #myVideoStopBtn, .VideoPlayerTmplt #myVideoName, .VideoPlayerTmplt #myVideoStatus {
+  display: none;
+}
+.VideoPlayerTmplt.videoPlaying #myVideoName, .VideoPlayerTmplt.videoPlaying #myVideoStatus, .VideoPlayerTmplt.videoPlaying #myVideoPreviousBtn, .VideoPlayerTmplt.videoPlaying #myVideoRW, .VideoPlayerTmplt.videoPlaying #myVideoPausePlayBtn, .VideoPlayerTmplt.videoPlaying #myVideoFF, .VideoPlayerTmplt.videoPlaying #myVideoNextBtn, .VideoPlayerTmplt.videoPlaying #myVideoStopBtn {
+  display: block;
+}
+.VideoPlayerTmplt #myMusicMetadata, .VideoPlayerTmplt #myVideoScrollUp, .VideoPlayerTmplt #myVideoScrollDown, .VideoPlayerTmplt.videoPlaying #myVideoList, .VideoPlayerTmplt.videoPlaying #myVideoScrollDown, .VideoPlayerTmplt.videoPlaying #myVideoScrollUp, .VideoPlayerTmplt.videoPlaying #myVideoInfo, .VideoPlayerTmplt.videoPlaying #toggleBgBtn {
+  visibility: hidden;
+}
+.VideoPlayerTmplt #toggleBgBtn, .VideoPlayerTmplt #myVideoInfo, .VideoPlayerTmplt #myVideoList, .VideoPlayerTmplt.videoPlaying #myMusicMetadata {
+  visibility: visible;
 }

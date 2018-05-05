@@ -112,14 +112,16 @@
  var statusbarTitleVideo = JSON.parse(localStorage.getItem('videoplayer.statusbartitle')) || false;
  var BlackOut = JSON.parse(localStorage.getItem('videoplayer.blackout')) || false;
  var selectedOptionItem = -1; //6 ??
+ var retryCountdown = null;
  var retryPlayback = null;
  var retryAttempts = 0;
- // hold function controls can be customized
- var holdFn1 = "select";
- var holdFn2 = "up";
- var holdFn3 = "down";
- var holdFn4 = "left";
- var holdFn5 = "right";
+ // hold function while video is playing can be customized
+ // id of toggle button ex: Repeat Button - myVideoRepeatBtn
+ var holdFn1 = "myVideoRepeatBtn"; // hold action for "select"
+ var holdFn2 = "optionStatusbarTitle"; // hold action for "up"
+ var holdFn3 = "myVideoShuffleBtn"; // hold action for "down"
+ var holdFn4 = "toggleBgBtn"; // hold action for "left"
+ var holdFn5 = "optionBlackOut"; // hold action for "right"
 
  //var logFile = "/tmp/mnt/sd_nav/video-log.txt";
  var logFile = "/jci/gui/apps/_videoplayer/videoplayer_log.txt";
@@ -208,13 +210,13 @@
      'if [ -e "${SWAPFILE}" ]; ' +
      'then ' +
      'mount -o rw,remount ${USBPATH}; ' +
-     'mkswap ${SWAPFILE};' +
+     'mkswap ${SWAPFILE}; ' +
      'swapon ${SWAPFILE}; ' +
      'break; ' +
      'fi; ' +
      'done; ';
 
-   src += 'rm -f /tmp/root/.gstreamer-0.10/registry.arm.bin;'; //cleans the gstreamer registry
+   src += 'rm -f /tmp/root/.gstreamer-0.10/registry.arm.bin; '; //cleans the gstreamer registry
 
    src += 'gst-inspect-0.10 > /dev/null 2>&1; '; // Start gstreamer before starting videos
 
@@ -362,6 +364,10 @@
      AIO_SBN("Title In Statusbar: " + (statusbarTitleVideo ? 'ON' : 'OFF'), videoPlayerIcon);
      (!statusbarTitleVideo) ? framework.common.setSbName("Video Player"): (currentVideoTrack !== null ? framework.common.setSbName(videoTitleFilter($('#myVideoName').text())) : null);
      localStorage.setItem('videoplayer.statusbartitle', JSON.stringify(statusbarTitleVideo));
+     $('#blackOutVideoStatus').removeClass('out');
+     if (currentVideoTrack !== null && BlackOut) {
+       (statusbarTitleVideo) ? $('.VPCtrlAppName, #blackOutVideoStatus').fadeIn(): $('.VPCtrlAppName, #blackOutVideoStatus').fadeOut();
+     }
    });
 
    /* Black Out the Background when videos are not in FullScreen
@@ -371,6 +377,7 @@
      $('#optionBlackOut').css({ 'background-image': (BlackOut ? boxChecked : boxUncheck) });
      AIO_SBN("Black Out Background: " + (BlackOut ? 'ON' : 'OFF'), videoPlayerIcon);
      localStorage.setItem('videoplayer.blackout', JSON.stringify(BlackOut));
+     if (currentVideoTrack !== null) { toggleBlackOut(BlackOut); }
    });
 
    /* Resume Last Playing Video Option
@@ -478,8 +485,7 @@
    if (!waitingWS) {
      waitingWS = true;
      currentVideoListContainer = 0;
-     $('#myVideoScrollUp').css({ 'visibility': 'hidden' });
-     $('#myVideoScrollDown').css({ 'visibility': 'hidden' });
+     $('#myVideoScrollUp, #myVideoScrollDown').css({ 'visibility': '' });
      $('#myVideoList').html("<img id='ajaxLoader' src='apps/_videoplayer/templates/VideoPlayer/images/ajax-loader.gif'>");
 
      src = '';
@@ -488,12 +494,10 @@
 
      if (!PlayMusic) {
        src += 'for VIDEO in /tmp/mnt/resources/Movies/*.mp4 /tmp/mnt/sd*/Movies/*.mp4 /tmp/mnt/sd*/Movies/*.avi /tmp/mnt/sd*/Movies/*.flv /tmp/mnt/sd*/Movies/*.wmv /tmp/mnt/sd*/Movies/*.3gp /tmp/mnt/sd*/Movies/*.mkv;';
-       $('#myVideoFullScrBtn').css({ 'display': 'block' });
-       $('#myVideoFullScrBtn').css({ 'visibility': 'visible' });
+       $('#myVideoFullScrBtn').css({ 'visibility': '' });
        $("#myVideoFullScrBtn").addClass('playbackOption');
      } else {
        src += 'for VIDEO in /tmp/mnt/sd*/Music/*.flac /tmp/mnt/sd*/Music/*.mp3;';
-       $('#myVideoFullScrBtn').css({ 'display': 'none' });
        $('#myVideoFullScrBtn').css({ 'visibility': 'hidden' });
        $("#myVideoFullScrBtn").removeClass('playbackOption');
      }
@@ -614,13 +618,13 @@
    }
 
    if (currentVideoListContainer === 0) {
-     $('#myVideoScrollUp').css({ 'visibility': 'hidden' });
+     $('#myVideoScrollUp').css({ 'visibility': '' });
    } else { // if(currentVideoListContainer > 0)
      $('#myVideoScrollUp').css({ 'visibility': 'visible' });
    }
 
    if (currentVideoListContainer === totalVideoListContainer - 1) {
-     $('#myVideoScrollDown').css({ 'visibility': 'hidden' });
+     $('#myVideoScrollDown').css({ 'visibility': '' });
    } else { // if(currentVideoListContainer < totalVideoListContainer - 1)
      $('#myVideoScrollDown').css({ 'visibility': 'visible' });
    }
@@ -646,11 +650,12 @@
    var videoToPlay = obj.attr('video-data');
    $('#myVideoName').html('Preparing to play...');
    $('#myVideoStatus, #blackOutVideoStatus, #myMusicMetadata').html('');
-   $('#myVideoName').css({ 'display': 'block' });
-   $('#myVideoStatus').css({ 'display': 'block' });
+   $('#myVideoScrollUp, #myVideoScrollDown').css({ 'visibility': '' });
+
    $('.memErrorMessage').remove();
    //$('#widgetContent').prepend($('</div>').addClass('recentPlayedItem').text(currentVideoTrack + ": " + videoToPlay));
    $('.VPControlOverlay').removeClass('blackOut');
+   $('#blackOutVideoStatus').removeClass('out');
 
    metadataAlbum = null;
    metadataAlbumArtist = null;
@@ -680,27 +685,7 @@
 
    myVideoWs('sync; for n in 0 1 2 3; do echo $n > /proc/sys/vm/drop_caches; done;', false);
 
-   $('#myVideoList').css({ 'visibility': 'hidden' });
-   $('#myMusicMetadata').css({ 'visibility': 'visible' });
-   $('#myVideoScrollDown').css({ 'visibility': 'hidden' });
-   $('#myVideoScrollUp').css({ 'visibility': 'hidden' });
-   $('#myVideoInfo').css({ 'visibility': 'hidden' });
-   $('#toggleBgBtn').css({ 'visibility': 'hidden' });
-
-   $('#myVideoShuffleBtn').css({ 'display': 'none' });
-   $('#myVideoMovieBtn').css({ 'display': 'none' });
-   $('#myVideoFullScrBtn').css({ 'display': 'none' });
-   $('#myResumePlay').css({ 'display': 'none' });
-   $('#myVideoRepeatBtn').css({ 'display': 'none' });
-   $('#myPlayMusicBtn').css({ 'display': 'none' });
-   $('#rebootBtnDiv').css({ 'display': 'none' });
-
-   $('#myVideoPreviousBtn').css({ 'display': '' });
-   $('#myVideoRW').css({ 'display': '' });
-   $('#myVideoPausePlayBtn').css({ 'display': '' });
-   $('#myVideoFF').css({ 'display': '' });
-   $('#myVideoNextBtn').css({ 'display': '' });
-   $('#myVideoStopBtn').css({ 'display': '' });
+   $('.VideoPlayerTmplt').addClass('videoPlaying');
    $('#myVideoName').html(obj.attr('video-name').replace(/ /g, "&nbsp;"));
 
    //$('.videoTouchControls').show();
@@ -899,29 +884,8 @@
 
    SelectCurrentTrack();
 
-   $('#myVideoPreviousBtn').css({ 'display': 'none' });
-   $('#myVideoRW').css({ 'display': 'none' });
-   $('#myVideoPausePlayBtn').css({ 'display': 'none' });
-   $('#myVideoFF').css({ 'display': 'none' });
-   $('#myVideoNextBtn').css({ 'display': 'none' });
-   $('#myVideoStopBtn').css({ 'display': 'none' });
-   $('#myVideoName').css({ 'display': 'none' });
-   $('#myVideoStatus').css({ 'display': 'none' });
-   $('#videoPlayBtn').css({ 'background-image': '' });
    $('.VPControlOverlay').css('height', '');
-
-   $('#myVideoShuffleBtn').css({ 'display': '' });
-   $('#myVideoMovieBtn').css({ 'display': '' });
-   $('#myVideoFullScrBtn').css({ 'display': '' });
-   $('#myResumePlay').css({ 'display': '' });
-   $('#myVideoRepeatBtn').css({ 'display': '' });
-   $('#myPlayMusicBtn').css({ 'display': '' });
-   $('#rebootBtnDiv').css({ 'display': '' });
-
-   $('#toggleBgBtn').css({ 'visibility': 'visible' });
-   $('#myVideoInfo').css({ 'visibility': 'visible' });
-   $('#myVideoList').css({ 'visibility': 'visible' });
-   $('#myMusicMetadata').css({ 'visibility': 'hidden' });
+   $('.VideoPlayerTmplt').removeClass('videoPlaying');
    myVideoListScrollUpDown('other');
 
  }
@@ -953,7 +917,10 @@
  /* FF playback request / response
  ==========================================================================================================*/
  function myVideoFFRequest() {
-
+   if (BlackOut && !statusbarTitleVideo) {
+     $('#blackOutVideoStatus').show();
+     $('#blackOutVideoStatus').removeClass('out');
+   }
    if ((!waitingWS) && (CurrentVideoPlayTime)) {
      waitingWS = true;
 
@@ -967,12 +934,18 @@
      wsVideo.send('h');
      waitingWS = false;
    }
+   if (BlackOut && !statusbarTitleVideo) {
+     setTimeout(function() { $('#blackOutVideoStatus').addClass('out') }, 1000);
+   }
  }
 
  /* RW playback request / response
  ==========================================================================================================*/
  function myVideoRWRequest() {
-
+   if (BlackOut && !statusbarTitleVideo) {
+     $('#blackOutVideoStatus').show();
+     $('#blackOutVideoStatus').removeClass('out');
+   }
    if ((!waitingWS) && (CurrentVideoPlayTime)) {
      waitingWS = true;
 
@@ -985,6 +958,9 @@
      wsVideo.send('e 1 t' + CurrentVideoPlayTime);
      wsVideo.send('h');
      waitingWS = false;
+   }
+   if (BlackOut && !statusbarTitleVideo) {
+     setTimeout(function() { $('#blackOutVideoStatus').addClass('out') }, 1000);
    }
  }
 
@@ -1193,7 +1169,7 @@
      $('.VPControlOverlay ul').hide();
      $('#myVideoName').css({ 'font-size': '16px', 'padding': '2px' }).html("Memory Error.- " + res);
      $('.VPControlOverlay').append('<div id="memErrorMessage" class="memErrorMessage"><b>***************&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MEMORY ERROR.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;***************</b><br>' + res.substring(res.indexOf("[ERR]")) + '<br>PLAYER WILL RETRY PLAYING VIDEO IN <span class="countdown-sec">10</span> SECONDS<br>TO AVOID THIS ERROR REMOVE NAV SD CARD BEFORE PLAYING VIDEOS.<br><br>IF ERRORS CONTINUE TAP THIS MESSAGE TO REBOOT<br><br>BEST VIDEO FORMAT TO MINIMIZE MEMORY ERRORS: <br><div style="font-size:30px;font-weight:bold;">MP4 H264 AAC 360P</div><br><ul></ul></div>');
-     var retryCountdown = setInterval(function() {
+     retryCountdown = setInterval(function() {
        sec < 0 ? clearInterval(retryCountdown) : $('.countdown-sec').text(sec);
        sec--;
      }, 1000);
@@ -1249,6 +1225,24 @@
      clearInterval(intervalPlaytime);
      clearTimeout(retryPlayback);
    }
+ }
+
+ /* Unmount Swapfile
+ ============================================================================================= */
+ function unmountSwap() {
+   var unmount = 'USBDRV="resources $(ls /mnt | grep sd)"; ' +
+     'for USB in ${USBDRV}; ' +
+     'do ' +
+     'USBPATH=/tmp/mnt/${USB}; ' +
+     'SWAPFILE="${USBPATH}"/swapfile; ' +
+     'if [ -e "${SWAPFILE}" ]; ' +
+     'then ' +
+     'mount -o rw,remount ${USBPATH}; ' +
+     'swapoff ${SWAPFILE}; ' +
+     'break; ' +
+     'fi; ' +
+     'done ';
+   myVideoWs(unmount, false);
  }
 
  /* function to handle the commander
@@ -1443,56 +1437,45 @@
  function handleHoldCommander(eventID) {
    // by default all long holds will do the same as the short click
    eventID = eventID.replace('Start', '');
+   // Video is Playing
    if (currentVideoTrack !== null) {
      switch (eventID) {
-       case holdFn1: // default: 'select'
-         // Playing: single click
-         handleCommander(eventID);
+       case 'select': // default: holdFn1
+         holdFn1 ? $('#' + holdFn1).click() : handleCommander(eventID);
          break;
-       case holdFn2: // default: 'up'
-         // Toggle Media title
-         $('#optionStatusbarTitle').click();
-         if (BlackOut) {
-           $('.VPCtrlAppName, #blackOutVideoStatus').fadeToggle(1200);
-         }
+       case 'up': // default: 'optionStatusbarTitle' Toggle Media title
+         holdFn2 ? $('#' + holdFn2).click() : handleCommander(eventID);
          break;
-       case holdFn3: // default: 'down'
-         // Playing: Toggle Shuffle
-         $('#myVideoShuffleBtn').click();
+       case 'down': // default: 'myVideoShuffleBtn'  Playing: Toggle Shuffle
+         holdFn3 ? $('#' + holdFn3).click() : handleCommander(eventID);
          break;
-       case holdFn4: // default: 'left'
-         // Playing: Toggle VideoPlayer background (*Not* the BlackOut Overlay)
-         $('#toggleBgBtn').click();
+       case 'left': // default: 'toggleBgBtn'  Playing: Toggle VideoPlayer background (*Not* the BlackOut Overlay)
+         holdFn4 ? $('#' + holdFn4).click() : handleCommander(eventID);
          break;
-       case holdFn5: // default: 'right'
-         // Playing: Toggle BlackOut Overlay
-         $('#optionBlackOut').click();
-         toggleBlackOut(BlackOut);
+       case 'right': // default: 'optionBlackOut'  Playing: Toggle BlackOut Overlay
+         holdFn5 ? $('#' + holdFn5).click() : handleCommander(eventID);
          break;
        default:
          handleCommander(eventID);
      }
    } else {
+     // Video is NOT playing
      switch (eventID) {
-       case holdFn1: // default: 'select'
+       case 'select': // default: holdFn1
          // Not Playing: SelectCurrentTrack
          SelectCurrentTrack();
          break;
-       case holdFn2: // default: 'up'
-         // Not Playing: Single click action
-         handleCommander(eventID);
+       case 'up': // Open/Close Info/Options panel
+         $('myVideoInfo').click();
          break;
-       case holdFn3: // default: 'down'
-         // Not Playing: Open/Close Info/Options panel
-         $('#myVideoInfo').click();
+       case 'down': // Open/Close Info/Options panel
+         $('myVideoInfo').click();
          break;
-       case holdFn4: // default: 'left'
-         // Not Playing: Single click action
-         handleCommander(eventID);
+       case 'left': // Play previous video
+         myVideoPreviousRequest();
          break;
-       case holdFn5: // default: 'right'
-         // Not Playing: Single click action
-         handleCommander(eventID);
+       case 'right': // Play next video
+         myVideoNextRequest();
          break;
        default:
          handleCommander(eventID);

@@ -44,12 +44,12 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties) {
   this.divElt.innerHTML = '<div id="myVideoContainer">' +
     '<div id="myVideoControlDiv">' +
     '<ul>' +
-    '<li id="myVideoStopBtn" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoStopBtn.png)"></li>' +
-    '<li id="myVideoNextBtn" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoNextBtn.png)"></li>' +
-    '<li id="myVideoFF" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/FF.png)"></li>' +
-    '<li id="myVideoPausePlayBtn" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPauseBtn.png)"></li>' +
-    '<li id="myVideoRW" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/RW.png)"></li>' +
-    '<li id="myVideoPreviousBtn" style="display: none; background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPreviousBtn.png)"></li>' +
+    '<li id="myVideoStopBtn" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoStopBtn.png)"></li>' +
+    '<li id="myVideoNextBtn" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoNextBtn.png)"></li>' +
+    '<li id="myVideoFF" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/FF.png)"></li>' +
+    '<li id="myVideoPausePlayBtn" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPauseBtn.png)"></li>' +
+    '<li id="myVideoRW" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/RW.png)"></li>' +
+    '<li id="myVideoPreviousBtn" style="background-image: url(apps/_videoplayer/templates/VideoPlayer/images/myVideoPreviousBtn.png)"></li>' +
 
     '<li id="myVideoFullScrBtn" class="playbackOption"><a>Full Screen</a></li>' +
     '<li id="myVideoRepeatBtn" class="playbackOption"><a>Repeat</a></li>' +
@@ -77,7 +77,6 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties) {
     '<aside id="widget-content">' +
     '<div id="widgetContent">' +
     '<div id="optionTitle">Video Player Options</div>' +
-    '<!-- <button id="optionTestError" class="panelOption btn">Test Error Message</button> -->' +
     '<ul><li id="optionStatusbarTitle" class="panelOption"><a>Title to Statusbar</a></li>' +
     '<li id="optionBlackOut" class="panelOption"><a>Black Out Background</a></li>' +
     '<li id="colorThemes" class="panelOption">' +
@@ -89,7 +88,6 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties) {
     '<a class="teal" style="color:teal">teal</a>' +
     '<a class="darkslategrey" style="color:darkslategrey">slate</a>' +
     '<a class="seashell" style="color:seashell">white</a>' +
-    '<!-- <a class="darkgoldenrod" style="color:darkgoldenrod">gold</a> -->' +
     '</li></ul></div>' +
     '<div id="widgetContentState">' +
     '<div id="infoTitle">Video Player Information</div>' +
@@ -198,7 +196,7 @@ VideoPlayerTmplt.prototype.cleanUp = function() {
   child.parentNode.removeChild(child);
   this.divElt = null;
   child = null;
-  $('.VPControlOverlay').remove();
+  document.getElementsByClassName('VPControlOverlay')[0].parentNode.removeChild(document.getElementsByClassName('VPControlOverlay')[0]);
   $('#SbSpeedo, #Sbfuel-bar-wrapper').fadeIn();
 };
 
