@@ -128,3 +128,16 @@ function JSONtoDOM(obj) {
   }
   return node;
 }
+
+/* Attempt to unmount swapfile on shutdown */
+var UMswap = null;
+
+function swapfileShutdownUnmount() {
+  UMswap = setInterval(function() {
+    if (typeof unmounmtSwap !== 'undefined' && (framework.getCurrCtxtId() === 'WaitForEnding' || framework.getCurrCtxtId() === 'PowerDownAnimation')) {
+      clearInterval(UMswap);
+      UMswap = null;
+      unmountSwap();
+    }
+  }, 1000)
+}

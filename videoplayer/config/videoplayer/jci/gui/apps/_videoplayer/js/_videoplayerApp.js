@@ -32,10 +32,6 @@ if (!window.jQuery) {
 
 _videoplayerApp.prototype.appInit = function() {
   log.debug("_videoplayerApp appInit  called...");
-  // This only needs to be running once
-  if (UMswap === null && typeof swapfileShutdownUnmount === "function") {
-    swapfileShutdownUnmount();
-  }
   // These values need to persist through videoplayer instances
   this.hold = false;
   this.resumePlay = 0;

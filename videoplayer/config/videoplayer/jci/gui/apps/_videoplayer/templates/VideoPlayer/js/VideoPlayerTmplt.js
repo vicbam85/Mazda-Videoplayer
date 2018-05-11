@@ -94,6 +94,7 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties) {
     '<ul><li>Best Video Format: 360p MP4 H264 AAC</li>' +
     '<li>For Hackers:</li>' +
     '<li>https://github.com/Trevelopment/Mazda-Videoplayer</li>' +
+    '<li id="unmountMsg"><button id="unmountSwapVP">Unmount Swap</button></li>' +
     '</ul></div></aside></div>' +
     '<script src="apps/_videoplayer/js/videoplayer-v3.js" type="text/javascript"></script>';
   // Append the control div with black overlay background to body so it overlays everything
@@ -115,7 +116,7 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties) {
     '</ul>';
   document.getElementsByClassName('VPControlOverlay')[0].innerHTML = this.playerControl;
   setTimeout(function() {
-    // We have kick off the video player with this function
+    // We initialize the video player with this function
     StartVideoPlayerApp();
   }, 700);
 }

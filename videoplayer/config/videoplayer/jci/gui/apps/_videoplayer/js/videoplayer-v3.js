@@ -112,16 +112,18 @@
  var statusbarTitleVideo = JSON.parse(localStorage.getItem('videoplayer.statusbartitle')) || false;
  var BlackOut = JSON.parse(localStorage.getItem('videoplayer.blackout')) || false;
  var selectedOptionItem = -1; //6 ??
- var retryCountdown = null;
  var retryPlayback = null;
  var retryAttempts = 0;
  // hold function while video is playing can be customized
  // id of toggle button ex: Repeat Button - myVideoRepeatBtn
- var holdFn1 = "myVideoRepeatBtn"; // hold action for "select"
- var holdFn2 = "optionStatusbarTitle"; // hold action for "up"
- var holdFn3 = "myVideoShuffleBtn"; // hold action for "down"
- var holdFn4 = "toggleBgBtn"; // hold action for "left"
- var holdFn5 = "optionBlackOut"; // hold action for "right"
+ var holdFnPlySel = "myVideoRepeatBtn"; // hold action for "select"
+ var holdFnPlyUp = "optionStatusbarTitle"; // hold action for "up"
+ var holdFnPlyDn = "myVideoShuffleBtn"; // hold action for "down"
+ var holdFnPlyLt = "toggleBgBtn"; // hold action for "left"
+ var holdFnPlyRt = "optionBlackOut"; // hold action for "right"
+ var clickFnPlySel = "myVideoPausePlayBtn";
+ var clickFnPlyUp = "myVideoFullScrBtn";
+ var clickFnPlyDn = "myVideoStopBtn";
 
  //var logFile = "/tmp/mnt/sd_nav/video-log.txt";
  var logFile = "/jci/gui/apps/_videoplayer/videoplayer_log.txt";
@@ -308,6 +310,7 @@
      } catch (err) {
        framework.common.setSbName(err.message);
      }
+     if (currentVideoTrack !== null) fullScreenRequest();
    });
 
    /* Repeat option (toggle none - looping single track - loop entire video list)
@@ -416,6 +419,7 @@
    });
 
    $('#popInfoTab').click(function() {
+     myVideoWs('cat /proc/meminfo | grep Swap', true);
      $('#videoInfoPanel').removeClass('state');
      $('#popInfoTab').css("background", vphColor);
      $('#popOptionsTab').css("background", '');
@@ -425,6 +429,7 @@
      $('#popOptionsTab').css("background", vphColor);
      $('#popInfoTab').css("background", '');
    });
+   $('#unmountSwapVP').click(unmountSwap);
 
    // Load cached Video List
    if (player.savedVideoList && (ResumePlay || player.resumePlay)) {
@@ -464,6 +469,9 @@
        CloseVideoFrame();
      }
    }, 100); //some performance issues ??
+   setTimeout(function() {
+     myVideoWs('[ -e /tmp/mnt/sd*/swapfile ] && echo VP_SWAP || echo VP_NOSWAP', true);
+   }, 10000);
  }
 
  // try not to make changes to the lines below
@@ -1032,14 +1040,13 @@
      res = res.substring(res.indexOf("Vol=") + 8, res.indexOf("Vol=") + 25);
      (BlackOut) ? $('#blackOutVideoStatus').html(res.replace(/(.*)\/(.*)/, "<div>$1</div><div>$2</div>")): $('#myVideoStatus').html(res);
    } else if (res.indexOf("fsl_player_play") !== -1) {
+     $('.memErrorMessage').remove();
      clearTimeout(retryPlayback);
      retryPlayback = null;
      CurrentVideoPlayTime = player.resumePlay;
-     if (!PlayMusic && FullScreen !== 2) {
-       fullScreenRequest();
-     }
-     if (BlackOut) {
-       $('.VPControlOverlay').addClass('blackOut');
+     if (!PlayMusic) {
+       if (FullScreen !== 2) fullScreenRequest();
+       toggleBlackOut(BlackOut);
      }
      if (CurrentVideoPlayTime > 0) {
        setTimeout(function() {
@@ -1047,7 +1054,7 @@
          wsVideo.send('h');
        }, 200);
      }
-     player.resumePlay = 0;
+     player.resumePlay = null;
      retryAttempts = 0;
      startPlayTimeInterval();
    } else if (res.indexOf("try to play failed") !== -1 || res.indexOf("ERR]") !== -1) {
@@ -1165,39 +1172,44 @@
  ============================================================================================= */
  function showMemErrorMessage(res) {
    if (framework.getCurrentApp() === "_videoplayer" && currentVideoTrack !== null) {
+     var failedToPlay = res.indexOf("try to play failed") !== -1;
      var sec = 9;
      $('.VPControlOverlay ul').hide();
      $('#myVideoName').css({ 'font-size': '16px', 'padding': '2px' }).html("Memory Error.- " + res);
-     $('.VPControlOverlay').append('<div id="memErrorMessage" class="memErrorMessage"><b>***************&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MEMORY ERROR.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;***************</b><br>' + res.substring(res.indexOf("[ERR]")) + '<br>PLAYER WILL RETRY PLAYING VIDEO IN <span class="countdown-sec">10</span> SECONDS<br>TO AVOID THIS ERROR REMOVE NAV SD CARD BEFORE PLAYING VIDEOS.<br><br>IF ERRORS CONTINUE TAP THIS MESSAGE TO REBOOT<br><br>BEST VIDEO FORMAT TO MINIMIZE MEMORY ERRORS: <br><div style="font-size:30px;font-weight:bold;">MP4 H264 AAC 360P</div><br><ul></ul></div>');
-     retryCountdown = setInterval(function() {
-       sec < 0 ? clearInterval(retryCountdown) : $('.countdown-sec').text(sec);
-       sec--;
-     }, 1000);
-     if (res !== "test") {
-       $('.memErrorMessage').click(function() {
-         $('.memErrorMessage').html("<div style='font-size:40px'>REBOOTING</div>");
-         myRebootSystem();
-       });
-       if (retryAttempts < 3) {
-         clearTimeout(retryPlayback);
-         retryPlayback = setTimeout(function() {
-           retryAttempts++;
-           if (framework.getCurrentApp() === "_videoplayer" && currentVideoTrack !== null && !CurrentVideoPlayTime) {
-             myVideoStartRequest($(".videoTrack").eq(selectedItem));
-           } else {
+     $('.VPControlOverlay').append('<div id="memErrorMessage" class="memErrorMessage"><b>***************&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VIDEO PLAYER ERROR.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;***************</b><br>' + (failedToPlay ? "VIDEO PLAYER FAILED TO START... <br>" : "MEMORY ERROR: " + res.substring(res.indexOf("[ERR]")) + '<br>PLAYER WILL RETRY PLAYING VIDEO IN <span class="countdown-sec">10</span> SECONDS<br>TO AVOID THIS ERROR REMOVE NAV SD CARD BEFORE PLAYING VIDEOS.<br><br>IF ERRORS CONTINUE ') + 'TAP THIS MESSAGE TO REBOOT<br><br>BEST VIDEO FORMAT TO MINIMIZE MEMORY ERRORS: <br><div style="font-size:30px;font-weight:bold;">MP4 H264 AAC 360P</div><br><ul></ul></div>');
+     if (!failedToPlay) {
+       var retryCountdown = setInterval(function() {
+         sec < 0 ? clearInterval(retryCountdown) : $('.countdown-sec').text(sec);
+         sec--;
+       }, 1000);
+       if (res !== "test") {
+         $('.memErrorMessage').click(function() {
+           $('.memErrorMessage').html("<div style='font-size:40px'>REBOOTING</div>");
+           myRebootSystem();
+         });
+         if (retryAttempts < 3) {
+           clearTimeout(retryPlayback);
+           retryPlayback = setTimeout(function() {
+             clearInterval(retryCountdown);
+             retryAttempts++;
+             if (framework.getCurrentApp() === "_videoplayer" && currentVideoTrack !== null && !CurrentVideoPlayTime) {
+               myVideoStartRequest($(".videoTrack").eq(selectedItem));
+             }
              $('.memErrorMessage').remove();
-           }
-         }, 10000);
-       } else {
-         retryAttempts = 1;
-         $('.countdown-sec').text('0');
-         myVideoStopRequest();
+           }, 10000);
+         } else {
+           retryAttempts = 1;
+           $('.countdown-sec').text('0');
+           myVideoStopRequest();
+           clearTimeout(retryPlayback);
+           clearInterval(retryCountdown);
+         }
        }
-     } else {
-       $('.memErrorMessage').click(function() {
-         $('.memErrorMessage').remove();
-       });
      }
+   } else {
+     $('.memErrorMessage').click(function() {
+       $('.memErrorMessage').remove();
+     });
    }
  }
 
@@ -1274,7 +1286,7 @@
            $(".videoTrack").eq(selectedItem).addClass(vpColorClass);
          }
        } else {
-         $('#myVideoStopBtn').click();
+         $('#' + clickFnPlyDn).click();
        }
        break;
 
@@ -1296,15 +1308,7 @@
            $(".videoTrack").eq(selectedItem).addClass(vpColorClass);
          }
        } else {
-         if (FullScreen === 0) {
-           FullScreen = 1;
-         } else if (FullScreen === 1) {
-           FullScreen = 2;
-         } else {
-           FullScreen = 0;
-         }
-         $('#myVideoFullScrBtn').css('background-image', 'url(apps/_videoplayer/templates/VideoPlayer/images/myFullScreen' + FullScreen + '.png)');
-         fullScreenRequest();
+         $('#' + clickFnPlyUp).click();
        }
        break;
 
@@ -1391,7 +1395,7 @@
 
      case "select":
        if (currentVideoTrack !== null) {
-         $('#myVideoPausePlayBtn').click();
+         $('#' + clickFnPlySel).click();
        } else if (optionsPanelOpen) {
          $(".videoTrack").removeClass(vpColorClass);
          $('.panelOptions .' + vpColorClass).click();
@@ -1440,20 +1444,20 @@
    // Video is Playing
    if (currentVideoTrack !== null) {
      switch (eventID) {
-       case 'select': // default: holdFn1
-         holdFn1 ? $('#' + holdFn1).click() : handleCommander(eventID);
+       case 'select': // default:Toggle Repeat
+         holdFnPlySel ? $('#' + holdFnPlySel).click() : handleCommander(eventID);
          break;
        case 'up': // default: 'optionStatusbarTitle' Toggle Media title
-         holdFn2 ? $('#' + holdFn2).click() : handleCommander(eventID);
+         holdFnPlyUp ? $('#' + holdFnPlyUp).click() : handleCommander(eventID);
          break;
        case 'down': // default: 'myVideoShuffleBtn'  Playing: Toggle Shuffle
-         holdFn3 ? $('#' + holdFn3).click() : handleCommander(eventID);
+         holdFnPlyDn ? $('#' + holdFnPlyDn).click() : handleCommander(eventID);
          break;
        case 'left': // default: 'toggleBgBtn'  Playing: Toggle VideoPlayer background (*Not* the BlackOut Overlay)
-         holdFn4 ? $('#' + holdFn4).click() : handleCommander(eventID);
+         holdFnPlyLt ? $('#' + holdFnPlyLt).click() : handleCommander(eventID);
          break;
        case 'right': // default: 'optionBlackOut'  Playing: Toggle BlackOut Overlay
-         holdFn5 ? $('#' + holdFn5).click() : handleCommander(eventID);
+         holdFnPlyRt ? $('#' + holdFnPlyRt).click() : handleCommander(eventID);
          break;
        default:
          handleCommander(eventID);
@@ -1466,10 +1470,10 @@
          SelectCurrentTrack();
          break;
        case 'up': // Open/Close Info/Options panel
-         $('myVideoInfo').click();
+         $('#myVideoInfo').click();
          break;
        case 'down': // Open/Close Info/Options panel
-         $('myVideoInfo').click();
+         $('#myVideoInfo').click();
          break;
        case 'left': // Play previous video
          myVideoPreviousRequest();
@@ -1493,14 +1497,24 @@
    ws.onmessage = function(event) {
      var res = event.data.trim();
 
+     if (res.indexOf('Swap') !== -1) {
+       $('#unmountMsg').append(res + '<br>');
+     }
      ws.close();
      ws = null;
 
      if (res.indexOf('playback-list') !== -1) {
        res = event.data.split('//#');
        myVideoListResponse(res[1]);
+     } else if (res.indexOf('VP_SWAP') !== -1) {
+       $('#unmountSwapVP').show();
+       // start unmount swapfile function
+       if (UMswap === null) {
+         swapfileShutdownUnmount();
+       }
+     } else if (res.indexOf('VP_NOSWAP') !== -1) {
+       $('#unmountSwapVP').hide();
      }
-
    };
 
    ws.onopen = function() {

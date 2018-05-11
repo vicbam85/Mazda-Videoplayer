@@ -503,3 +503,6 @@
 .VideoPlayerTmplt #toggleBgBtn, .VideoPlayerTmplt #myVideoInfo, .VideoPlayerTmplt #myVideoList, .VideoPlayerTmplt.videoPlaying #myMusicMetadata {
   visibility: visible;
 }
+.VideoPlayerTmplt #unmountSwapVP {
+  float: right;
+}
