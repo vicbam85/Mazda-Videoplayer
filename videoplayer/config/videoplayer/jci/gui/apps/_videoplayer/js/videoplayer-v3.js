@@ -112,7 +112,8 @@
  var statusbarTitleVideo = JSON.parse(localStorage.getItem('videoplayer.statusbartitle')) || false;
  var BlackOut = JSON.parse(localStorage.getItem('videoplayer.blackout')) || false;
  var selectedOptionItem = -1; //6 ??
- var retryPlayback = null;
+ var vpWaitingForShutdown = null;
+ var retryCountdown = null;
  var retryAttempts = 0;
  // hold function while video is playing can be customized
  // id of toggle button ex: Repeat Button - myVideoRepeatBtn
@@ -419,12 +420,13 @@
    });
 
    $('#popInfoTab').click(function() {
-     myVideoWs('cat /proc/meminfo | grep Swap', true);
      $('#videoInfoPanel').removeClass('state');
      $('#popInfoTab').css("background", vphColor);
      $('#popOptionsTab').css("background", '');
    });
    $('#popOptionsTab').click(function() {
+     $('#unmountMsg').html('');
+     myVideoWs('cat /proc/meminfo | grep Swap', true);
      $('#videoInfoPanel').addClass('state');
      $('#popOptionsTab').css("background", vphColor);
      $('#popInfoTab').css("background", '');
@@ -469,6 +471,7 @@
        CloseVideoFrame();
      }
    }, 100); //some performance issues ??
+   // unmount swap on boot
    setTimeout(function() {
      myVideoWs('[ -e /tmp/mnt/sd*/swapfile ] && echo VP_SWAP || echo VP_NOSWAP', true);
    }, 10000);
@@ -649,8 +652,8 @@
  ==========================================================================================================*/
  function myVideoStartRequest(obj) {
    $('#videoInfoPanel').removeClass('showInfo');
-   clearTimeout(retryPlayback);
-   retryPlayback = null;
+   clearInterval(retryCountdown);
+   retryCountdown = null;
    optionsPanelOpen = false;
    player.musicIsPaused = true;
    currentVideoTrack = $(".videoTrack").index(obj);
@@ -872,8 +875,8 @@
    if (statusbarTitleVideo && framework.getCurrentApp() === "_videoplayer") {
      framework.common.setSbName("Video Player");
    }
-   clearTimeout(retryPlayback);
-   retryPlayback = null;
+   clearInterval(retryCountdown);
+   retryCountdown = null;
 
    if (wsVideo !== null) {
      wsVideo.send('x');
@@ -1041,11 +1044,13 @@
      (BlackOut) ? $('#blackOutVideoStatus').html(res.replace(/(.*)\/(.*)/, "<div>$1</div><div>$2</div>")): $('#myVideoStatus').html(res);
    } else if (res.indexOf("fsl_player_play") !== -1) {
      $('.memErrorMessage').remove();
-     clearTimeout(retryPlayback);
-     retryPlayback = null;
+     clearInterval(retryCountdown);
+     retryCountdown = null;
      CurrentVideoPlayTime = player.resumePlay;
      if (!PlayMusic) {
-       if (FullScreen !== 2) fullScreenRequest();
+       if (FullScreen !== 2) {
+         fullScreenRequest();
+       }
        toggleBlackOut(BlackOut);
      }
      if (CurrentVideoPlayTime > 0) {
@@ -1171,44 +1176,38 @@
  /* Show memory error message
  ============================================================================================= */
  function showMemErrorMessage(res) {
-   if (framework.getCurrentApp() === "_videoplayer" && currentVideoTrack !== null) {
+   if (framework.getCurrentApp() === "_videoplayer" && currentVideoTrack !== null && retryCountdown === null) {
      var failedToPlay = res.indexOf("try to play failed") !== -1;
      var sec = 9;
      $('.VPControlOverlay ul').hide();
      $('#myVideoName').css({ 'font-size': '16px', 'padding': '2px' }).html("Memory Error.- " + res);
      $('.VPControlOverlay').append('<div id="memErrorMessage" class="memErrorMessage"><b>***************&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VIDEO PLAYER ERROR.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;***************</b><br>' + (failedToPlay ? "VIDEO PLAYER FAILED TO START... <br>" : "MEMORY ERROR: " + res.substring(res.indexOf("[ERR]")) + '<br>PLAYER WILL RETRY PLAYING VIDEO IN <span class="countdown-sec">10</span> SECONDS<br>TO AVOID THIS ERROR REMOVE NAV SD CARD BEFORE PLAYING VIDEOS.<br><br>IF ERRORS CONTINUE ') + 'TAP THIS MESSAGE TO REBOOT<br><br>BEST VIDEO FORMAT TO MINIMIZE MEMORY ERRORS: <br><div style="font-size:30px;font-weight:bold;">MP4 H264 AAC 360P</div><br><ul></ul></div>');
      if (!failedToPlay) {
-       var retryCountdown = setInterval(function() {
-         sec < 0 ? clearInterval(retryCountdown) : $('.countdown-sec').text(sec);
-         sec--;
-       }, 1000);
-       if (res !== "test") {
-         $('.memErrorMessage').click(function() {
-           $('.memErrorMessage').html("<div style='font-size:40px'>REBOOTING</div>");
-           myRebootSystem();
-         });
-         if (retryAttempts < 3) {
-           clearTimeout(retryPlayback);
-           retryPlayback = setTimeout(function() {
-             clearInterval(retryCountdown);
+       if (retryAttempts < 3) {
+         retryCountdown = setInterval(function() {
+           if (sec < 0) {
+             clearInterval(retryCountdown)
+             retryCountdown = null;
              retryAttempts++;
              if (framework.getCurrentApp() === "_videoplayer" && currentVideoTrack !== null && !CurrentVideoPlayTime) {
                myVideoStartRequest($(".videoTrack").eq(selectedItem));
              }
              $('.memErrorMessage').remove();
-           }, 10000);
-         } else {
-           retryAttempts = 1;
-           $('.countdown-sec').text('0');
-           myVideoStopRequest();
-           clearTimeout(retryPlayback);
-           clearInterval(retryCountdown);
-         }
+           } else {
+             $('.countdown-sec').text(sec);
+           }
+           sec--;
+         }, 1000);
+       } else {
+         retryAttempts = 1;
+         $('.countdown-sec').text('0');
+         myVideoStopRequest();
+         clearInterval(retryCountdown);
        }
      }
-   } else {
      $('.memErrorMessage').click(function() {
-       $('.memErrorMessage').remove();
+       $('.memErrorMessage').html("<div style='font-size:40px'>REBOOTING</div>");
+       myRebootSystem();
      });
    }
  }
@@ -1235,7 +1234,7 @@
      myVideoStopRequest();
      clearInterval(intervalVideoPlayer);
      clearInterval(intervalPlaytime);
-     clearTimeout(retryPlayback);
+     clearInterval(retryCountdown);
    }
  }
 
@@ -1500,8 +1499,10 @@
      if (res.indexOf('Swap') !== -1) {
        $('#unmountMsg').append(res + '<br>');
      }
-     ws.close();
-     ws = null;
+     if (ws !== null) {
+       ws.close();
+       ws = null;
+     }
 
      if (res.indexOf('playback-list') !== -1) {
        res = event.data.split('//#');
@@ -1524,6 +1525,17 @@
        ws = null;
      }
    };
+ }
+
+ function videoPlayerShutdown() {
+   vpWaitingForShutdown = setInterval(function() {
+     if (framework.getCurrCtxtId() === 'WaitForEnding' || framework.getCurrCtxtId() === 'PowerDownAnimation') {
+       unmountSwap();
+       clearInterval(vpWaitingForShutdown);
+       vpWaitingForShutdown = null;
+     }
+
+   }, 100);
  }
  // #############################################################################################
  // End of Video Player
