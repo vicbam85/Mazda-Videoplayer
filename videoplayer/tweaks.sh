@@ -2,6 +2,8 @@
 
 # Video Player v3.5 installer
 
+VP_VER=3.5
+
 get_cmu_sw_version()
 {
 	_ver=$(/bin/grep "^JCI_SW_VER=" /jci/version.ini | /bin/sed 's/^.*_\([^_]*\)\"$/\1/')
@@ -124,7 +126,7 @@ if [ -e ${MYDIR}/config/sm.conf ]
 fi
 
 
-show_message_OK "Version = ${CMU_SW_VER} : To continue installation press OK"
+show_message_OK "Video Player App Version = ${VP_VER}\n\nCMU Version = ${CMU_SW_VER} : To continue installation press OK"
 
 
 # a window will appear for 4 seconds to show the beginning of installation

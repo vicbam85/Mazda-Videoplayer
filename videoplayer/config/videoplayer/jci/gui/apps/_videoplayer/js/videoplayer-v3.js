@@ -99,7 +99,7 @@
  var currentVideoListContainer = 0;
  var totalVideoListContainer = 0;
  var waitingWS = false;
- var waitingForClose = false;
+ var waitingForClose = true;
  var totalVideos = 0;
  var intervalVideoPlayer = null;
  var VideoPaused = false;
@@ -162,6 +162,7 @@
    player = framework.getAppInstance('_videoplayer');
    currentVideoTrack = player.currentVideoTrack || currentVideoTrack;
    ResumePlay = player.resumeVideo || ResumePlay;
+   waitingForClose = true;
    try {
      $('#SbSpeedo, #Sbfuel-bar-wrapper').fadeOut();
      if (localStorage.getItem('videoplayer.colortheme')) {
@@ -221,7 +222,7 @@
 
    src += 'rm -f /tmp/root/.gstreamer-0.10/registry.arm.bin; '; //cleans the gstreamer registry
 
-   src += 'gst-inspect-0.10 > /dev/null 2>&1; '; // Start gstreamer before starting videos
+   src += 'gst-inspect-0.10 > /dev/null 2>&1 '; // Start gstreamer before starting videos
 
    myVideoWs(src, false); //start-swap
 
@@ -262,7 +263,7 @@
    /* stop playback
    ==================================================================================*/
    $('#myVideoStopBtn, #videoStopBtn').click(function() {
-     player.resumePlay = 0;
+     player.resumePlay = null;
      currentVideoTrack = null;
      CurrentVideoPlayTime = null;
      myVideoStopRequest();
@@ -370,7 +371,7 @@
      localStorage.setItem('videoplayer.statusbartitle', JSON.stringify(statusbarTitleVideo));
      $('#blackOutVideoStatus').removeClass('out');
      if (currentVideoTrack !== null && BlackOut) {
-       (statusbarTitleVideo) ? $('.VPCtrlAppName, #blackOutVideoStatus').fadeIn(): $('.VPCtrlAppName, #blackOutVideoStatus').fadeOut();
+       (statusbarTitleVideo) ? $('.VPCtrlAppName, #blackOutVideoStatus').removeClass('out'): $('.VPCtrlAppName, #blackOutVideoStatus').addClass('out');
      }
    });
 
@@ -393,17 +394,6 @@
      AIO_SBN("Resume Media: " + (ResumePlay ? 'ON' : 'OFF'), videoPlayerIcon);
      localStorage.setItem('videoplayer.resumevideo', JSON.stringify(ResumePlay));
    });
-
-   /* Test the error message - Dont need this anymore
-   ==================================================================================*/
-   /*$('#optionTestError').click(function() {
-     $('.VPControlOverlay').css('height', '420px');
-     var res = "test";
-     showMemErrorMessage(res);
-     $('.memErrorMessage').delay(1500).fadeOut(3000);
-     $('.VPControlOverlay').delay(4000).css('height', '');
-     $(this).blur();
-   });*/
 
    /* Video information / options panel
    ==================================================================================*/
@@ -470,11 +460,11 @@
      if (framework.getCurrentApp() !== '_videoplayer') {
        CloseVideoFrame();
      }
-   }, 100); //some performance issues ??
+   }, 10); //some performance issues ??
    // unmount swap on boot
    setTimeout(function() {
      myVideoWs('[ -e /tmp/mnt/sd*/swapfile ] && echo VP_SWAP || echo VP_NOSWAP', true);
-   }, 10000);
+   }, 1000);
  }
 
  // try not to make changes to the lines below
@@ -498,11 +488,8 @@
      currentVideoListContainer = 0;
      $('#myVideoScrollUp, #myVideoScrollDown').css({ 'visibility': '' });
      $('#myVideoList').html("<img id='ajaxLoader' src='apps/_videoplayer/templates/VideoPlayer/images/ajax-loader.gif'>");
-
      src = '';
-
      src += 'FILES=""; ';
-
      if (!PlayMusic) {
        src += 'for VIDEO in /tmp/mnt/resources/Movies/*.mp4 /tmp/mnt/sd*/Movies/*.mp4 /tmp/mnt/sd*/Movies/*.avi /tmp/mnt/sd*/Movies/*.flv /tmp/mnt/sd*/Movies/*.wmv /tmp/mnt/sd*/Movies/*.3gp /tmp/mnt/sd*/Movies/*.mkv;';
        $('#myVideoFullScrBtn').css({ 'visibility': '' });
@@ -512,14 +499,11 @@
        $('#myVideoFullScrBtn').css({ 'visibility': 'hidden' });
        $("#myVideoFullScrBtn").removeClass('playbackOption');
      }
-
      src += 'do ' +
        'FILES="${FILES}${VIDEO}|"; ' +
        'done; ' +
-       'FILES=$(echo "${FILES}" | tr \'|\' \'\n\' | sort -f -t \/ -k 6 | tr \'\n\' \'|\'); ';
-
-     src += 'echo playback-list//#"${FILES}"';
-
+       'FILES=$(echo "${FILES}" | tr \'|\' \'\n\' | sort -f -t \/ -k 6 | tr \'\n\' \'|\'); ' +
+       'echo playback-list//#"${FILES}"';
      myVideoWs(src, true); //playback-list
    }
 
@@ -657,7 +641,7 @@
    optionsPanelOpen = false;
    player.musicIsPaused = true;
    currentVideoTrack = $(".videoTrack").index(obj);
-   CurrentVideoPlayTime = player.resumePlay;
+   CurrentVideoPlayTime = player.resumePlay || 0;
    var videoToPlay = obj.attr('video-data');
    $('#myVideoName').html('Preparing to play...');
    $('#myVideoStatus, #blackOutVideoStatus, #myMusicMetadata').html('');
@@ -705,13 +689,10 @@
    $('#videoPlayBtn').css({ 'background-image': '' });
    $('.VPControlOverlay').removeClass('wideVideo');
 
-   if (BlackOut) {
-     $('.VPCtrlAppName').text(videoTitleFilter($('#myVideoName').text()));
-     $('.VPCtrlAppName, #blackOutVideoStatus').delay(2000).fadeIn(2000);
-     if (!statusbarTitleVideo) {
-       $('.VPCtrlAppName, #blackOutVideoStatus').delay(5000).fadeOut(5000);
-     }
-   }
+
+   (BlackOut && statusbarTitleVideo) ? $('.VPCtrlAppName, #blackOutVideoStatus').removeClass('out'): $('.VPCtrlAppName, #blackOutVideoStatus').addClass('out');
+
+   $('.VPCtrlAppName').text(videoTitleFilter($('#myVideoName').text()));
    if (statusbarTitleVideo) {
      framework.common.setSbName(videoTitleFilter($('#myVideoName').text()));
    }
@@ -746,11 +727,11 @@
        wsVideo.send('/usr/bin/gst-discoverer-0.10 -v "' + videoToPlay + '"');
        //}
        wsVideo.send(src);
-       if (CurrentVideoPlayTime) {
+       if (CurrentVideoPlayTime > 1) {
          setTimeout(function() {
            wsVideo.send('e 0 t' + (CurrentVideoPlayTime - 1));
            wsVideo.send('h');
-         }, 300);
+         }, 600);
        }
 
      };
@@ -815,15 +796,11 @@
          myVideoWs('killall -9 gplay', false);
          wsVideo.close();
          wsVideo = null;
-       } catch (e) {
-
-       }
-
+       } catch (e) { }
        myVideoStartRequest(nextVideoObject);
      } else {
        myVideoStopRequest();
      }
-
      waitingWS = false;
    }
  }
@@ -1026,11 +1003,11 @@
    if (black) {
      $('.VPControlOverlay').addClass('blackOut');
      if (statusbarTitleVideo) {
-       $('.VPCtrlAppName, #blackOutVideoStatus').fadeIn(1000);
+       $('.VPCtrlAppName, #blackOutVideoStatus').removeClass('out');
      }
    } else {
      $('.VPControlOverlay').removeClass('blackOut');
-     $('.VPCtrlAppName, #blackOutVideoStatus').fadeOut(1000);
+     $('.VPCtrlAppName, #blackOutVideoStatus').addClass('out');
    }
  }
 
@@ -1046,18 +1023,18 @@
      $('.memErrorMessage').remove();
      clearInterval(retryCountdown);
      retryCountdown = null;
-     CurrentVideoPlayTime = player.resumePlay;
+     CurrentVideoPlayTime = player.resumePlay || 0;
      if (!PlayMusic) {
        if (FullScreen !== 2) {
          fullScreenRequest();
        }
        toggleBlackOut(BlackOut);
      }
-     if (CurrentVideoPlayTime > 0) {
+     if (CurrentVideoPlayTime > 1) {
        setTimeout(function() {
-         wsVideo.send('e 0 t' + CurrentVideoPlayTime);
+         wsVideo.send('e 0 t' + CurrentVideoPlayTime - 1);
          wsVideo.send('h');
-       }, 200);
+       }, 500);
      }
      player.resumePlay = null;
      retryAttempts = 0;
@@ -1150,25 +1127,15 @@
    if ((currentVideoTrack === null) || (currentVideoTrack > totalVideos - 1)) {
      currentVideoTrack = player.currentVideoTrack || 0;
    }
-
    selectedItem = currentVideoTrack;
-
    currentVideoTrack = null;
-
    if (player.resumePlay && framework.getCurrentApp() === "_videoplayer") {
-
      myVideoStartRequest($(".videoTrack").eq(selectedItem));
-
    } else {
-
      $(".videoListContainer:eq(" + currentVideoListContainer + ")").css("display", "none");
-
      currentVideoListContainer = ((selectedItem) / 8) >> 0;
-
      $(".videoListContainer:eq(" + currentVideoListContainer + ")").css("display", "");
-
      $(".videoTrack").eq(selectedItem).addClass(vpColorClass);
-
      myVideoListScrollUpDown('other'); // moved from 4 lines above
    }
  }
@@ -1229,8 +1196,8 @@
  /* Stop and close the video frame
  ============================================================================================= */
  function CloseVideoFrame() {
-   if (!waitingForClose) {
-     waitingForClose = true;
+   if (waitingForClose) {
+     waitingForClose = false;
      myVideoStopRequest();
      clearInterval(intervalVideoPlayer);
      clearInterval(intervalPlaytime);
@@ -1268,16 +1235,12 @@
        } else if (currentVideoTrack === null) {
          if ((currentVideoListContainer + 1) < totalVideoListContainer) {
            $('#myVideoScrollDown').click();
-
            $(".playbackOption").css("background-image", function(i, val) { return val.substring(0, val.indexOf(")") + 1); });
            $(".videoTrack").removeClass(vpColorClass);
-
            selectedItem += 8;
-
            if (selectedItem >= totalVideos) {
              selectedItem = totalVideos - 1;
            }
-
            $(".videoTrack").eq(selectedItem).addClass(vpColorClass);
          } else if ((currentVideoListContainer + 1) === totalVideoListContainer) {
            $(".videoTrack").removeClass(vpColorClass);
@@ -1296,7 +1259,6 @@
        } else if (currentVideoTrack === null) {
          if (currentVideoListContainer > 0) {
            $('#myVideoScrollUp').click();
-
            $(".playbackOption").css("background-image", function(i, val) { return val.substring(0, val.indexOf(")") + 1); });
            $(".videoTrack").removeClass(vpColorClass);
            selectedItem -= 8;
@@ -1321,20 +1283,14 @@
          $('#myVideoRW').click();
        } else {
          $(".playbackOption").css("background-image", function(i, val) { return val.substring(0, val.indexOf(")") + 1); });
-
          if (selectedItem > 0) {
            $(".videoTrack").removeClass(vpColorClass);
-
            if ((selectedItem % 8) === 0) {
              $('#myVideoScrollUp').click();
            }
-
            selectedItem--;
-
            $(".videoTrack").eq(selectedItem).addClass(vpColorClass);
-
-         } else //if (selectedItem < 0)
-         {
+         } else { //if (selectedItem < 0)
            $(".videoTrack").removeClass(vpColorClass);
            selectedItem = totalVideos - 1;
            myVideoListScrollUpDown('bottom');
@@ -1353,17 +1309,14 @@
          $('#myVideoFF').click();
        } else {
          $(".playbackOption").css("background-image", function(i, val) { return val.substring(0, val.indexOf(")") + 1); });
-
          if (selectedItem < totalVideos - 1) {
            $(".videoTrack").removeClass(vpColorClass);
            selectedItem++;
            $(".videoTrack").eq(selectedItem).addClass(vpColorClass);
-
            if ((selectedItem > 0) && ((selectedItem % 8) === 0)) {
              $('#myVideoScrollDown').click();
            }
-         } else //if (selectedItem >= totalVideos)
-         {
+         } else { //if (selectedItem >= totalVideos)
            $(".videoTrack").removeClass(vpColorClass);
            selectedItem = 0;
            myVideoListScrollUpDown('top');
@@ -1379,15 +1332,11 @@
          $('#popInfoTab').click();
        } else {
          $(".videoTrack").removeClass(vpColorClass);
-
          $(".playbackOption").css("background-image", function(i, val) { return val.substring(0, val.indexOf(")") + 1); });
-
          selectedOptionItem++;
-
          if (selectedOptionItem >= $(".playbackOption").length) {
            selectedOptionItem = 0;
          }
-
          $(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val) { return val + ", -o-linear-gradient(top," + vphColor + ", rgba(0,0,0,0))"; });
        }
        break;
@@ -1415,15 +1364,11 @@
          $('#popOptionsTab').click();
        } else {
          $(".videoTrack").removeClass(vpColorClass);
-
          $(".playbackOption").css("background-image", function(i, val) { return val.substring(0, val.indexOf(")") + 1); });
-
          selectedOptionItem--;
-
          if (selectedOptionItem < 0) {
            selectedOptionItem = $(".playbackOption").length - 1;
          }
-
          $(".playbackOption").eq(selectedOptionItem).css("background-image", function(i, val) { return val + ", -o-linear-gradient(top," + vphColor + ", rgba(0,0,0,0))"; });
        }
        break;
@@ -1468,11 +1413,13 @@
          // Not Playing: SelectCurrentTrack
          SelectCurrentTrack();
          break;
-       case 'up': // Open/Close Info/Options panel
+       case 'up': // Open/Close Options panel
          $('#myVideoInfo').click();
+         $('#popInfoTab').click();
          break;
-       case 'down': // Open/Close Info/Options panel
+       case 'down': // Open/Close Info panel
          $('#myVideoInfo').click();
+         $('#popOptionsTab').click();
          break;
        case 'left': // Play previous video
          myVideoPreviousRequest();
@@ -1510,11 +1457,11 @@
      } else if (res.indexOf('VP_SWAP') !== -1) {
        $('#unmountSwapVP').show();
        // start unmount swapfile function
-       if (UMswap === null) {
-         swapfileShutdownUnmount();
+       if (vpWaitingForShutdown === null) {
+         videoPlayerShutdown();
        }
      } else if (res.indexOf('VP_NOSWAP') !== -1) {
-       $('#unmountSwapVP').hide();
+       $('.vpUnmnt').remove();
      }
    };
 
@@ -1530,11 +1477,10 @@
  function videoPlayerShutdown() {
    vpWaitingForShutdown = setInterval(function() {
      if (framework.getCurrCtxtId() === 'WaitForEnding' || framework.getCurrCtxtId() === 'PowerDownAnimation') {
-       unmountSwap();
        clearInterval(vpWaitingForShutdown);
        vpWaitingForShutdown = null;
+       unmountSwap();
      }
-
    }, 100);
  }
  // #############################################################################################

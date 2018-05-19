@@ -12,7 +12,7 @@
   max-height: 480px;
   z-index: 99;
 }
-.VPControlOverlay:not(.blackOut) .StatusBarCtrlAppName {
+.VPControlOverlay:not(.blackOut) .StatusBarCtrlAppName, .VPControlOverlay:not(.blackOut) #blackOutVideoStatus {
   display: none !important;
 }
 .VPControlOverlay.blackOut .StatusBarCtrlAppName {
@@ -25,14 +25,20 @@
   position: fixed;
   padding: 10px;
   z-index: 100;
-  height: 40px;
+  height: 8%;
   width: 50px;
   bottom: 0;
   transition: none;
   opacity: 1;
 }
-.VPControlOverlay.blackOut #blackOutVideoStatus.out {
-  transition: opacity 2s ease-in-out 1s;
+.VPControlOverlay.blackOut .VPCtrlAppName {
+  transition: none;
+  z-index: 100;
+  opacity: 1;
+  height: 12%;
+}
+.VPControlOverlay.blackOut #blackOutVideoStatus.out, .VPControlOverlay.blackOut .VPCtrlAppName.out {
+  transition: opacity 1s ease-in-out 1s;
   opacity: 0;
 }
 .VPControlOverlay.blackOut.wideVideo #blackOutVideoStatus div {
@@ -56,9 +62,6 @@
   background-color: transparent;
   height: 100%;
   width: 100%;
-}
-#blackBgn .VPCtrlAppName {
-  height: 12%;
 }
 .VPControlOverlay.blackOut #blackBgn {
   background-color: black;

@@ -94,8 +94,8 @@ function VideoPlayerTmplt(uiaId, parentDiv, templateID, controlProperties) {
     '<ul><li>Best Video Format: 360p MP4 H264 AAC</li>' +
     '<li>For Hackers:</li>' +
     '<li>https://github.com/Trevelopment/Mazda-Videoplayer</li>' +
-    '<li id="unmountbtn"><button id="unmountSwapVP">Unmount Swap</button></li>' +
-    '<li id="unmountMsg"></li>' +
+    '<li id="unmountbtn" class="vpUnmnt"><button id="unmountSwapVP">Unmount Swap</button></li>' +
+    '<li id="unmountMsg" class="vpUnmnt"></li>' +
     '</ul></div></aside></div>' +
     '<script src="apps/_videoplayer/js/videoplayer-v3.js" type="text/javascript"></script>';
   // Append the control div with black overlay background to body so it overlays everything
