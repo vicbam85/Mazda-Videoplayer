@@ -229,7 +229,7 @@
   padding-bottom: 22px;
 }
 .VideoPlayerTmplt #myVideoControlDiv ul li:active {
-  background: linear-gradient(bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
+  background: -webkit-linear-gradient(bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 1));
   background-repeat: no-repeat !important;
   background-position: 0 3px;
 }
@@ -489,7 +489,7 @@
   margin-top: 25px;
 }
 .VideoPlayerTmplt #videoPlayBtn {
-  background-image: ''
+  background-image: none;
 }
 .VideoPlayerTmplt.videoPlaying #myVideoShuffleBtn, .VideoPlayerTmplt.videoPlaying #myVideoMovieBtn, .VideoPlayerTmplt.videoPlaying #myVideoFullScrBtn, .VideoPlayerTmplt.videoPlaying #myResumePlay, .VideoPlayerTmplt.videoPlaying #myVideoRepeatBtn, .VideoPlayerTmplt.videoPlaying #myPlayMusicBtn, .VideoPlayerTmplt.videoPlaying #rebootBtnDiv, .VideoPlayerTmplt #myVideoPreviousBtn, .VideoPlayerTmplt #myVideoRW, .VideoPlayerTmplt #myVideoPausePlayBtn, .VideoPlayerTmplt #myVideoFF, .VideoPlayerTmplt #myVideoNextBtn, .VideoPlayerTmplt #myVideoStopBtn, .VideoPlayerTmplt #myVideoName, .VideoPlayerTmplt #myVideoStatus {
   display: none;
