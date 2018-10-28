@@ -222,7 +222,8 @@ function StartVideoPlayerApp() {
      'break; ' +
      'fi; ' +
       'done; ';*/
-
+  src = "kill -9 $(ps | grep aap | awk '${print $1}'); ";
+  src += "kill -9 $(ps | grep carplay | awk '${print $1}'); ";
    src += 'rm -f /tmp/root/.gstreamer-0.10/registry.arm.bin; '; //cleans the gstreamer registry
 
    src += 'gst-inspect-0.10 > /dev/null 2>&1 '; // Start gstreamer before starting videos

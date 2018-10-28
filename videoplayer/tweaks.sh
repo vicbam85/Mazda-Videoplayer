@@ -232,20 +232,19 @@ fi
 log_message "mod to /jci/opera/opera_dir/userjs/additionalApps.json"
 add_app_json "_videoplayer" "Video Player"
 
-
-if [ $(get_cmu_sw_version_only) -ge 70 ]
+if [ $(get_cmu_sw_version_only) -lt 60 ]
 then
+  cp -a ${MYDIR}/config/videoplayer/jci/gui/apps/* /jci/gui/apps/
+  chmod 755 -R /jci/gui/apps/_videoplayer/
+  log_message "Copy files to /jci/gui/apps"
+  sed -r -i "s/var useisink = true/var useisink = false/g" /jci/gui/apps/_videoplayer/js/videoplayer-v3.js
+else
+  mount -o rw,remount /tmp/mnt/resources 
   mkdir -p /tmp/mnt/resources/aio/apps
   cp -a ${MYDIR}/config/videoplayer/jci/gui/apps/* /tmp/mnt/resources/aio/apps
   log_message "Copy files to /tmp/mnt/resources/aio/apps"
   ln -sf /tmp/mnt/resources/aio/apps/_videoplayer /jci/gui/apps/_videoplayer
   log_message "=== Created Symlink To Resources Partition  ==="
-  sed -i "s/var useisink = .*;/var useisink = true;/g" /tmp/mnt/resources/aio/apps/_videoplayer/js/videoplayer-v3.js
-else
-  cp -a ${MYDIR}/config/videoplayer/jci/gui/apps/* /jci/gui/apps/
-  chmod 755 -R /jci/gui/apps/_videoplayer/
-  log_message "Copy files to /jci/gui/apps"
-  sed -i "s/var useisink = .*;/var useisink = false;/g" /jci/gui/apps/_videoplayer/js/videoplayer-v3.js
 fi
 
 
