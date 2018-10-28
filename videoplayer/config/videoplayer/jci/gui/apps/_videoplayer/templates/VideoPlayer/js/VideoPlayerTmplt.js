@@ -194,6 +194,7 @@ VideoPlayerTmplt.prototype.handleControllerEvent = function(eventID) {
  * its controls.
  */
 VideoPlayerTmplt.prototype.cleanUp = function() {
+  $('#SbSpeedo').removeClass('stayHidden');
   var child = document.getElementById(this.divElt.id);
   child.parentNode.removeChild(child);
   this.divElt = null;

@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# Video Player v3.5 installer
+# Video Player v3.6 installer
 
-VP_VER=3.5
+VP_VER=3.6
 
 get_cmu_sw_version()
 {
@@ -232,10 +232,21 @@ fi
 log_message "mod to /jci/opera/opera_dir/userjs/additionalApps.json"
 add_app_json "_videoplayer" "Video Player"
 
-log_message "Copy files to jci/gui/apps"
 
-cp -a ${MYDIR}/config/videoplayer/jci/gui/apps/* /jci/gui/apps/
-chmod 755 -R /jci/gui/apps/_videoplayer/
+if [ $(get_cmu_sw_version_only) -ge 70 ]
+then
+  mkdir -p /tmp/mnt/resources/aio/apps
+  cp -a ${MYDIR}/config/videoplayer/jci/gui/apps/* /tmp/mnt/resources/aio/apps
+  log_message "Copy files to /tmp/mnt/resources/aio/apps"
+  ln -sf /tmp/mnt/resources/aio/apps/_videoplayer /jci/gui/apps/_videoplayer
+  log_message "=== Created Symlink To Resources Partition  ==="
+  sed -i "s/var useisink = .*;/var useisink = true;/g" /tmp/mnt/resources/aio/apps/_videoplayer/js/videoplayer-v3.js
+else
+  cp -a ${MYDIR}/config/videoplayer/jci/gui/apps/* /jci/gui/apps/
+  chmod 755 -R /jci/gui/apps/_videoplayer/
+  log_message "Copy files to /jci/gui/apps"
+  sed -i "s/var useisink = .*;/var useisink = false;/g" /jci/gui/apps/_videoplayer/js/videoplayer-v3.js
+fi
 
 
 log_message "=== END OF COPY ==="
