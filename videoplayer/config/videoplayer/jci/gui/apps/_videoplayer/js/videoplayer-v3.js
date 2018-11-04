@@ -219,14 +219,14 @@ function StartVideoPlayerApp() {
       'mount -o rw,remount ${USBPATH}; ' +
       'mkswap ${SWAPFILE}; ' +
       'swapon ${SWAPFILE}; ' +
-     'break; ' +
-     'fi; ' +
+      'break; ' +
+      'fi; ' +
       'done; ';*/
   src = "kill -9 $(ps | grep aap | awk '${print $1}'); ";
   src += "kill -9 $(ps | grep carplay | awk '${print $1}'); ";
-   src += 'rm -f /tmp/root/.gstreamer-0.10/registry.arm.bin; '; //cleans the gstreamer registry
+  src += 'rm -f /tmp/root/.gstreamer-0.10/registry.arm.bin; '; //cleans the gstreamer registry
 
-   src += 'gst-inspect-0.10 > /dev/null 2>&1 '; // Start gstreamer before starting videos
+  src += 'gst-inspect-0.10 > /dev/null 2>&1 '; // Start gstreamer before starting videos
 
   myVideoWs(src, false);
 
@@ -487,7 +487,7 @@ function myVideoListRequest() {
       $('#myVideoFullScrBtn').css({ 'visibility': '' });
       $("#myVideoFullScrBtn").addClass('playbackOption');
     } else {
-      src += 'V=$(find /tmp/mnt/sd*/Music -type f -name "*.mp3" -o -name "*.ogg" -o -name "*.flac" -o -name "*.mp4" );';  
+      src += 'V=$(find /tmp/mnt/sd*/Music -type f -name "*.mp3" -o -name "*.ogg" -o -name "*.flac" -o -name "*.mp4" );';
       $('#myVideoFullScrBtn').css({ 'visibility': 'hidden' });
       $("#myVideoFullScrBtn").removeClass('playbackOption');
     }
@@ -549,7 +549,7 @@ function myVideoListResponse(data) {
     $("#myVideoList").append($('<ul id="ul' + totalVideoListContainer + '"></ul>')
       .addClass("videoListContainer"));
     var videoListUl = $("#ul" + totalVideoListContainer);
-
+    var videoString = "";
     videos.forEach(function(item, index) {
 
       if ((index > 0) && (index) % 8 === 0) {
@@ -559,21 +559,20 @@ function myVideoListResponse(data) {
         videoListUl = $("#ul" + totalVideoListContainer);
       }
 
-      var videoName = item.replace(folderPath, '');
-      if (!PlayMusic) {
-        videoName = videoName.substring(videoName.search(/\/movies\//i) + 8);
-      } else {
-        videoName = videoName.substring(videoName.search(/\/music\//i) + 7);
-      }
+      videoString = "";
+      var videoPath = item.replace(/[a-z0-9\/]*\/(movies|music)\//i,'').split("/");
+      var videoName = videoPath.pop();
+      if (PlayMusic) { videoName = videoName.replace(/^[0-9]{2} /,''); }  // Music track file names often start with the track number
+      if (videoPath.length > 0) { videoString = "<div class='videoPath'>/" + videoPath.join("/") + "</div>"; } // File is in a subdirectory
+      videoString += "<div class='videoLine'>" + (++index) + ". " + videoName.replace(/  /g, " &nbsp;") + "</div>";
 
       videoListUl.append($('<li></li>')
         .attr({
           'video-name': videoName,
           'video-data': item
         })
-        .addClass('videoTrack')
-        .html(index + 1 + ". " + videoName.replace(/  /g, " &nbsp;")));
-
+        .addClass('videoTrack' + (videoPath.length > 0 ? ' hasPath': ''))
+        .html(videoString));
     });
 
     totalVideos = videos.length;
@@ -770,13 +769,11 @@ function myVideoNextRequest() {
     }
     if (Repeat !== 1 && totalVideos > 1) {
       if (recentlyPlayed.length >= totalVideos) {
+        recentlyPlayed = [];
         if (Repeat !== 2) {
           myVideoStopRequest();
           waitingWS = false;
-          recentlyPlayed = [];
           return;
-        } else {
-          recentlyPlayed = [];
         }
       }
 
@@ -1132,7 +1129,7 @@ function DisplayMetadata() {
 function SelectCurrentTrack() {
   $(".videoTrack").removeClass(vpColorClass);
   if ((currentVideoTrack === null) || (currentVideoTrack > totalVideos - 1)) {
-    currentVideoTrack = player.currentVideoTrack || 0;
+    currentVideoTrack = player.currentVideoTrack < totalVideos ? player.currentVideoTrack: 0;
   }
   selectedItem = currentVideoTrack;
   currentVideoTrack = null;
